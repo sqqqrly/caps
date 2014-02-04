@@ -133,8 +133,14 @@ static char co_h[] = "%Z% %M% %I% (%G% - %U%)";
 #define  HasIOModule          0x40000000	/* F052498								  */
 #define  HasBoxFull           0x80000000  /* Cosmair FF Box Full Lights      */
 #ifdef TCBL
+#ifdef HasBadgeReader
+#   undef HasBadgeReader
+#endif
 #define  HasBadgeReader	      0
 #define  HasTCBayLamp	      0x200000
+#ifdef IsDummy
+#   undef IsDummy
+#endif
 #define  IsDummy              0
 #define  DemandFeed           0x20000000
 #endif
