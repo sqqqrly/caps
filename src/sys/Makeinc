@@ -1,0 +1,1760 @@
+#--------------------------------------------------------------------------#
+#  progs sources
+#
+PROGS=\
+   ac_view.c\
+   acd_pm_screen.c\
+   acd_sku_screen.c\
+   adjust_time.c\
+   alc.c\
+   alc_diag.c\
+   alc_diag_test.c\
+   alc_in.c\
+   alc_init.c\
+   alc_sim.c\
+   alc_suitcase.c\
+   alc_suitcase_menu.c\
+   ansi_server.c\
+   ansi_server2.c\
+   backupmm.c\
+   batch_receipts_srn.c\
+   berkeley_control.c\
+   bf_sim.c\
+   bf_view.c\
+   box_packing_list.c\
+   caps_client.c\
+   caps_logout.c\
+   caps_server.c\
+   change_op_info.c\
+   com_kermit_in.c\
+   com_kermit_out.c\
+   com_menu_in.c\
+   com_tran_out.c\
+   compare_hw_maps.c\
+   comrecv.c\
+   comsend.c\
+   config_entry.c\
+   config_sel_menu.c\
+   config_select.c\
+   configure.c\
+   confm.c\
+   create_output_file.c\
+   database_report.c\
+   delete_pm_screen.c\
+   diag_menu0.c\
+   diag_menu1.c\
+   diag_menu2.c\
+   diag_menu3.c\
+   diagnostics.c\
+   diskette_diags.c\
+   display_shorts.c\
+   dlc.c\
+   e_d_res_tick_prnt.c\
+   fix_letters.c\
+   group_comms.c\
+   hw_init.c\
+   inhibit_enable_pm.c\
+   initialization.c\
+   input_editor.c\
+   ins_pm_screen.c\
+   item_move_create.c\
+   item_move_input.c\
+   logon.c\
+   lot_control.c\
+   manpower_input.c\
+   message_view.c\
+   mmenu.c\
+   notice_printer.c\
+   ofc.c\
+   op_logoff.c\
+   op_logon.c\
+   operm.c\
+   order_comms.c\
+   order_display.c\
+   order_entry.c\
+   order_input.c\
+   order_input_menu.c\
+   order_picks.c\
+   order_purge.c\
+   order_stat.c\
+   order_unload.c\
+   orphan_picks.c\
+   packing_list.c\
+   pfead.c\
+   pfead_inventory.c\
+   pfead_pmfile.c\
+   pfead_prodfile.c\
+   pfead_reports.c\
+   pff_inquiry_create.c\
+   pff_inquiry_input.c\
+   pff_inquiry_report.c\
+   pff_print.c\
+   pfq_report.c\
+   pick_loc_create.c\
+   pick_loc_input.c\
+   pick_rate_entry.c\
+   pick_update_db.c\
+   picker_acctability.c\
+   picker_db_clear.c\
+   picker_error_maint.c\
+   picker_information.c\
+   picker_login_rpt.c\
+   picker_zero_counts.c\
+   pnmm.c\
+   prft.c\
+   printer_control.c\
+   product_file_query.c\
+   productivity.c\
+   rap_screen.c\
+   reconfigure_orders.c\
+   record_format_srn.c\
+   recover_orders.c\
+   release.c\
+   restock_rpt_create.c\
+   restock_rpt_input.c\
+   results_output.c\
+   rp_init.c\
+   save_hw_maps.c\
+   sections_maint.c\
+   select_comms.c\
+   shipping_label.c\
+   sku_diskette_read.c\
+   sku_diskette_write.c\
+   st_init.c\
+   stock_stat_create.c\
+   stock_stat_input.c\
+   stockout_create.c\
+   stockout_input.c\
+   sys_stat.c\
+   sys_stat1.c\
+   sys_stat2.c\
+   sys_stat3.c\
+   sys_stat4.c\
+   syscomm.c\
+   test_menu.c\
+   tote_label.c\
+   tote_packing_list.c\
+   trans_in_aps.c\
+   trans_out_aps.c\
+   trans_server.c\
+   transac_copy.c\
+   transac_format_srn.c\
+   transac_output.c\
+   transac_review.c\
+   transac_short_rpt.c\
+   tty_server.c\
+   view_menu.c\
+   zero_counts.c\
+   zero_move_counts.c\
+   zero_prod_counts.c\
+   zone_bal_input.c\
+   zone_stat.c
+
+#--------------------------------------------------------------------------#
+#  progs targets
+#
+all::	progs
+progs:\
+   $(BIN)/ac_view\
+   $(BIN)/acd_pm_screen\
+   $(BIN)/acd_sku_screen\
+   $(BIN)/adjust_time\
+   $(BIN)/alc\
+   $(BIN)/alc_diag\
+   $(BIN)/alc_diag_test\
+   $(BIN)/alc_in\
+   $(BIN)/alc_init\
+   $(BIN)/alc_sim\
+   $(BIN)/alc_suitcase\
+   $(BIN)/alc_suitcase_menu\
+   $(BIN)/ansi_server\
+   $(BIN)/ansi_server2\
+   $(BIN)/backupmm\
+   $(BIN)/batch_receipts_srn\
+   $(BIN)/berkeley_control\
+   $(BIN)/bf_sim\
+   $(BIN)/bf_view\
+   $(BIN)/box_packing_list\
+   $(BIN)/caps_client\
+   $(BIN)/caps_logout\
+   $(BIN)/caps_server\
+   $(BIN)/change_op_info\
+   $(BIN)/com_kermit_in\
+   $(BIN)/com_kermit_out\
+   $(BIN)/com_menu_in\
+   $(BIN)/com_tran_out\
+   $(BIN)/compare_hw_maps\
+   $(BIN)/comrecv\
+   $(BIN)/comsend\
+   $(BIN)/config_entry\
+   $(BIN)/config_sel_menu\
+   $(BIN)/config_select\
+   $(BIN)/configure\
+   $(BIN)/confm\
+   $(BIN)/create_output_file\
+   $(BIN)/database_report\
+   $(BIN)/delete_pm_screen\
+   $(BIN)/diag_menu0\
+   $(BIN)/diag_menu1\
+   $(BIN)/diag_menu2\
+   $(BIN)/diag_menu3\
+   $(BIN)/diagnostics\
+   $(BIN)/diskette_diags\
+   $(BIN)/display_shorts\
+   $(BIN)/dlc\
+   $(BIN)/e_d_res_tick_prnt\
+   $(BIN)/fix_letters\
+   $(BIN)/group_comms\
+   $(BIN)/hw_init\
+   $(BIN)/inhibit_enable_pm\
+   $(BIN)/initialization\
+   $(BIN)/input_editor\
+   $(BIN)/ins_pm_screen\
+   $(BIN)/item_move_create\
+   $(BIN)/item_move_input\
+   $(BIN)/logon\
+   $(BIN)/lot_control\
+   $(BIN)/manpower_input\
+   $(BIN)/message_view\
+   $(BIN)/mmenu\
+   $(BIN)/notice_printer\
+   $(BIN)/ofc\
+   $(BIN)/op_logoff\
+   $(BIN)/op_logon\
+   $(BIN)/operm\
+   $(BIN)/order_comms\
+   $(BIN)/order_display\
+   $(BIN)/order_entry\
+   $(BIN)/order_input\
+   $(BIN)/order_input_menu\
+   $(BIN)/order_picks\
+   $(BIN)/order_purge\
+   $(BIN)/order_stat\
+   $(BIN)/order_unload\
+   $(BIN)/orphan_picks\
+   $(BIN)/packing_list\
+   $(BIN)/pfead\
+   $(BIN)/pfead_inventory\
+   $(BIN)/pfead_pmfile\
+   $(BIN)/pfead_prodfile\
+   $(BIN)/pfead_reports\
+   $(BIN)/pff_inquiry_create\
+   $(BIN)/pff_inquiry_input\
+   $(BIN)/pff_inquiry_report\
+   $(BIN)/pff_print\
+   $(BIN)/pfq_report\
+   $(BIN)/pick_loc_create\
+   $(BIN)/pick_loc_input\
+   $(BIN)/pick_rate_entry\
+   $(BIN)/pick_update_db\
+   $(BIN)/picker_acctability\
+   $(BIN)/picker_db_clear\
+   $(BIN)/picker_error_maint\
+   $(BIN)/picker_information\
+   $(BIN)/picker_login_rpt\
+   $(BIN)/picker_zero_counts\
+   $(BIN)/pnmm\
+   $(BIN)/prft\
+   $(BIN)/printer_control\
+   $(BIN)/product_file_query\
+   $(BIN)/productivity\
+   $(BIN)/rap_screen\
+   $(BIN)/reconfigure_orders\
+   $(BIN)/record_format_srn\
+   $(BIN)/recover_orders\
+   $(BIN)/release\
+   $(BIN)/restock_rpt_create\
+   $(BIN)/restock_rpt_input\
+   $(BIN)/results_output\
+   $(BIN)/rp_init\
+   $(BIN)/save_hw_maps\
+   $(BIN)/sections_maint\
+   $(BIN)/select_comms\
+   $(BIN)/shipping_label\
+   $(BIN)/sku_diskette_read\
+   $(BIN)/sku_diskette_write\
+   $(BIN)/st_init\
+   $(BIN)/stock_stat_create\
+   $(BIN)/stock_stat_input\
+   $(BIN)/stockout_create\
+   $(BIN)/stockout_input\
+   $(BIN)/sys_stat\
+   $(BIN)/sys_stat1\
+   $(BIN)/sys_stat2\
+   $(BIN)/sys_stat3\
+   $(BIN)/sys_stat4\
+   $(BIN)/syscomm\
+   $(BIN)/test_menu\
+   $(BIN)/tote_label\
+   $(BIN)/tote_packing_list\
+   $(BIN)/trans_in_aps\
+   $(BIN)/trans_out_aps\
+   $(BIN)/trans_server\
+   $(BIN)/transac_copy\
+   $(BIN)/transac_format_srn\
+   $(BIN)/transac_output\
+   $(BIN)/transac_review\
+   $(BIN)/transac_short_rpt\
+   $(BIN)/tty_server\
+   $(BIN)/view_menu\
+   $(BIN)/zero_counts\
+   $(BIN)/zero_move_counts\
+   $(BIN)/zero_prod_counts\
+   $(BIN)/zone_bal_input\
+   $(BIN)/zone_stat
+	@echo progs is up to date
+
+#--------------------------------------------------------------------------#
+#  progs dependencies
+#
+$(OBJ)/ac_view.o:                 ac_view.c\
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/message_types.h         \
+   $(SRN)/ac_view.t               \
+   $(INC)/zone_status.h           \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/ac_view:   $(OBJ)/ac_view.o   $(LIBS); @$(LINK)
+$(OBJ)/acd_pm_screen.o:           acd_pm_screen.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/eh_nos.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/st.h                    \
+   $(INC)/language.h              \
+   $(SRN)/add_pm_screen.t         \
+   $(SRN)/assign_pm_screen.t      \
+   $(SRN)/change_pm_screen.t      \
+   $(SRN)/deassign_pm_screen.t    \
+   $(SRN)/move_pm_screen.t        \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/acd_pm_screen:   $(OBJ)/acd_pm_screen.o   $(LIBS); @$(LINK)
+$(OBJ)/acd_sku_screen.o:          acd_sku_screen.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/add_sku_screen.t        \
+   $(SRN)/change_sku_screen.t     \
+   $(SRN)/delete_sku_screen.t     \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/acd_sku_screen:   $(OBJ)/acd_sku_screen.o   $(LIBS); @$(LINK)
+$(OBJ)/adjust_time.o:             adjust_time.c\
+   $(INC)/caps_copyright.h        ; @$(COMPILE)
+$(BIN)/adjust_time:   $(OBJ)/adjust_time.o   $(LIBS); @$(LINK)
+$(OBJ)/alc.o:                     alc.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/alc_text.h              \
+   $(INC)/global_types.h          \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/eh_nos.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/zone_status.h           \
+   $(INC)/box.h                   \
+   $(INC)/Bard.h                  \
+   $(INC)/boxes.h                 \
+   $(INC)/bard/picker.h           \
+   $(INC)/sections.h              \
+   $(INC)/date_mani_c.h           ; @$(COMPILE)
+$(BIN)/alc:   $(OBJ)/alc.o   $(LIBS); @$(LINK)
+$(OBJ)/alc_diag.o:                alc_diag.c\
+   $(INC)/file_names.h            \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/alc_diag:   $(OBJ)/alc_diag.o   $(LIBS); @$(LINK)
+$(OBJ)/alc_diag_test.o:           alc_diag_test.c\
+   $(INC)/file_names.h            \
+   $(INC)/co.h                    ; @$(COMPILE)
+$(BIN)/alc_diag_test:   $(OBJ)/alc_diag_test.o   $(LIBS); @$(LINK)
+$(OBJ)/alc_in.o:                  alc_in.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/file_names.h            \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/alc_packet.h            \
+   $(INC)/eh_nos.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    ; @$(COMPILE)
+$(BIN)/alc_in:   $(OBJ)/alc_in.o   $(LIBS); @$(LINK)
+$(OBJ)/alc_init.o:                alc_init.c\
+   $(INC)/message_types.h         \
+   $(INC)/file_names.h            \
+   $(INC)/global_types.h          \
+   $(INC)/alc_packet.h            \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    ; @$(COMPILE)
+$(BIN)/alc_init:   $(OBJ)/alc_init.o   $(LIBS); @$(LINK)
+$(OBJ)/alc_sim.o:                 alc_sim.c\
+   $(INC)/Bard.h                  \
+   alc.c                   ; @$(COMPILE)
+$(BIN)/alc_sim:   $(OBJ)/alc_sim.o   $(LIBS); @$(LINK)
+$(OBJ)/alc_suitcase.o:            alc_suitcase.c\
+   $(INC)/file_names.h            ; @$(COMPILE)
+$(BIN)/alc_suitcase:   $(OBJ)/alc_suitcase.o   $(LIBS); @$(LINK)
+$(OBJ)/alc_suitcase_menu.o:       alc_suitcase_menu.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(SRN)/alc_suitcase_menu.t     \
+   $(INC)/eh_nos.h                ; @$(COMPILE)
+$(BIN)/alc_suitcase_menu:   $(OBJ)/alc_suitcase_menu.o   $(LIBS); @$(LINK)
+$(OBJ)/ansi_server.o:             ansi_server.c\
+   $(INC)/file_names.h            \
+   $(INC)/ansi_data.h             \
+   $(INC)/eh.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/message.h               \
+   $(INC)/message_types.h         \
+   $(INC)/kernel_types.h          ; @$(COMPILE)
+$(BIN)/ansi_server:   $(OBJ)/ansi_server.o   $(LIBS); @$(LINK)
+$(OBJ)/ansi_server2.o:            ansi_server2.c\
+   $(INC)/file_names.h            \
+   $(INC)/ansi_data2.h            \
+   $(INC)/eh.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/message.h               \
+   $(INC)/message_types.h         \
+   $(INC)/kernel_types.h          ; @$(COMPILE)
+$(BIN)/ansi_server2:   $(OBJ)/ansi_server2.o   $(LIBS); @$(LINK)
+$(OBJ)/backupmm.o:                backupmm.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/backupmm.t              ; @$(COMPILE)
+$(BIN)/backupmm:   $(OBJ)/backupmm.o   $(LIBS); @$(LINK)
+$(OBJ)/batch_receipts_srn.o:      batch_receipts_srn.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/batch_receipts_srn.t    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/batch_receipts_srn:   $(OBJ)/batch_receipts_srn.o   $(LIBS); @$(LINK)
+$(OBJ)/berkeley_control.o:        berkeley_control.c\
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/message_types.h         \
+   $(INC)/language.h              \
+   $(SRN)/berkeley_control.t      ; @$(COMPILE)
+$(BIN)/berkeley_control:   $(OBJ)/berkeley_control.o   $(LIBS); @$(LINK)
+$(OBJ)/bf_sim.o:                  bf_sim.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         ; @$(COMPILE)
+$(BIN)/bf_sim:   $(OBJ)/bf_sim.o   $(LIBS); @$(LINK)
+$(OBJ)/bf_view.o:                 bf_view.c\
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/caps_messages.h         \
+   $(INC)/message_types.h         \
+   $(SRN)/bf_view.t               \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/bf_view:   $(OBJ)/bf_view.o   $(LIBS); @$(LINK)
+$(OBJ)/box_packing_list.o:        box_packing_list.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    \
+   $(INC)/box.h                   \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/boxes.h                 \
+   $(INC)/bard/picker.h           \
+   $(INC)/custom/kmart/remarks_text.h\
+   $(INC)/custom/kmart/pick_text.h\
+   $(INC)/custom/noxell/remarks_text.h\
+   $(INC)/custom/noxell/pick_text.h\
+   $(INC)/custom/kmart/box_packing_list.h\
+   $(INC)/custom/noxell/box_packing_list.h; @$(COMPILE)
+$(BIN)/box_packing_list:   $(OBJ)/box_packing_list.o   $(LIBS); @$(LINK)
+$(OBJ)/caps_client.o:             caps_client.c\
+   $(INC)/ss.h                    \
+   $(INC)/global_types.h          \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/queue.h            ; @$(COMPILE)
+$(BIN)/caps_client:   $(OBJ)/caps_client.o   $(LIBS); @$(LINK)
+$(OBJ)/caps_logout.o:             caps_logout.c\
+   $(INC)/message_types.h         \
+   $(INC)/kernel_types.h          \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/caps_logout:   $(OBJ)/caps_logout.o   $(LIBS); @$(LINK)
+$(OBJ)/caps_server.o:             caps_server.c\
+   $(INC)/message.h               \
+   $(INC)/message_types.h         ; @$(COMPILE)
+$(BIN)/caps_server:   $(OBJ)/caps_server.o   $(LIBS); @$(LINK)
+$(OBJ)/change_op_info.o:          change_op_info.c\
+   $(INC)/file_names.h            \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/change_op_info.t        \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/operator.h         ; @$(COMPILE)
+$(BIN)/change_op_info:   $(OBJ)/change_op_info.o   $(LIBS); @$(LINK)
+$(OBJ)/com_kermit_in.o:           com_kermit_in.c\
+   $(INC)/eh_nos.h                \
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/file_names.h            \
+   $(SRN)/com_kermit_in.t         ; @$(COMPILE)
+$(BIN)/com_kermit_in:   $(OBJ)/com_kermit_in.o   $(LIBS); @$(LINK)
+$(OBJ)/com_kermit_out.o:          com_kermit_out.c\
+   $(INC)/eh_nos.h                \
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/file_names.h            ; @$(COMPILE)
+$(BIN)/com_kermit_out:   $(OBJ)/com_kermit_out.o   $(LIBS); @$(LINK)
+$(OBJ)/com_menu_in.o:             com_menu_in.c\
+   $(INC)/eh_nos.h                \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(SRN)/com_menu_in.t           ; @$(COMPILE)
+$(BIN)/com_menu_in:   $(OBJ)/com_menu_in.o   $(LIBS); @$(LINK)
+$(OBJ)/com_tran_out.o:            com_tran_out.c\
+   $(INC)/message_types.h         \
+   $(INC)/global_types.h          \
+   $(INC)/xt.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/com_tran_out:   $(OBJ)/com_tran_out.o   $(LIBS); @$(LINK)
+$(OBJ)/compare_hw_maps.o:         compare_hw_maps.c\
+   $(INC)/file_names.h            \
+   $(INC)/message_types.h         \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    ; @$(COMPILE)
+$(BIN)/compare_hw_maps:   $(OBJ)/compare_hw_maps.o   $(LIBS); @$(LINK)
+$(OBJ)/comrecv.o:                 comrecv.c\
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/file_names.h            ; @$(COMPILE)
+$(BIN)/comrecv:   $(OBJ)/comrecv.o   $(LIBS); @$(LINK)
+$(OBJ)/comsend.o:                 comsend.c\
+   $(INC)/file_names.h            ; @$(COMPILE)
+$(BIN)/comsend:   $(OBJ)/comsend.o   $(LIBS); @$(LINK)
+$(OBJ)/config_entry.o:            config_entry.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/language.h              \
+   $(SRN)/config_entry.t          ; @$(COMPILE)
+$(BIN)/config_entry:   $(OBJ)/config_entry.o   $(LIBS); @$(LINK)
+$(OBJ)/config_sel_menu.o:         config_sel_menu.c\
+   $(INC)/iodefs.h                \
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/config_sel_menu.t       ; @$(COMPILE)
+$(BIN)/config_sel_menu:   $(OBJ)/config_sel_menu.o   $(LIBS); @$(LINK)
+$(OBJ)/config_select.o:           config_select.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/pr.h                    \
+   $(INC)/st.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/config_select.t         \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/config_select:   $(OBJ)/config_select.o   $(LIBS); @$(LINK)
+$(OBJ)/configure.o:               configure.c\
+   $(INC)/file_names.h            \
+   $(INC)/global_types.h          \
+   $(INC)/message_types.h         \
+   $(INC)/co.h                    \
+   $(INC)/plc.h                   \
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/configure:   $(OBJ)/configure.o   $(LIBS); @$(LINK)
+$(OBJ)/confm.o:                   confm.c\
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(SRN)/confm.t                 \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/confm:   $(OBJ)/confm.o   $(LIBS); @$(LINK)
+$(OBJ)/create_output_file.o:      create_output_file.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/create_output_file:   $(OBJ)/create_output_file.o   $(LIBS); @$(LINK)
+$(OBJ)/database_report.o:         database_report.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/database_report:   $(OBJ)/database_report.o   $(LIBS); @$(LINK)
+$(OBJ)/delete_pm_screen.o:        delete_pm_screen.c\
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/xf_defs.h               \
+   $(SRN)/delete_pm_screen.t      \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/delete_pm_screen:   $(OBJ)/delete_pm_screen.o   $(LIBS); @$(LINK)
+$(OBJ)/diag_menu0.o:              diag_menu0.c\
+   $(INC)/iodefs.h                \
+   $(INC)/global_types.h          \
+   $(INC)/co.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/sd.h                    \
+   $(SRN)/diag_menu0.t            \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/diag_menu0:   $(OBJ)/diag_menu0.o   $(LIBS); @$(LINK)
+$(OBJ)/diag_menu1.o:              diag_menu1.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/diag_menu1.t            \
+   $(SRN)/loop_diags.t            \
+   $(INC)/eh_nos.h                ; @$(COMPILE)
+$(BIN)/diag_menu1:   $(OBJ)/diag_menu1.o   $(LIBS); @$(LINK)
+$(OBJ)/diag_menu2.o:              diag_menu2.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/sd.h                    \
+   $(SRN)/diag_menu2.t            ; @$(COMPILE)
+$(BIN)/diag_menu2:   $(OBJ)/diag_menu2.o   $(LIBS); @$(LINK)
+$(OBJ)/diag_menu3.o:              diag_menu3.c\
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/language.h              \
+   $(SRN)/diag_menu3.t            \
+   $(INC)/eh_nos.h                ; @$(COMPILE)
+$(BIN)/diag_menu3:   $(OBJ)/diag_menu3.o   $(LIBS); @$(LINK)
+$(OBJ)/diagnostics.o:             diagnostics.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/diagnostics.t           ; @$(COMPILE)
+$(BIN)/diagnostics:   $(OBJ)/diagnostics.o   $(LIBS); @$(LINK)
+$(OBJ)/diskette_diags.o:          diskette_diags.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/diskette_diags.t        ; @$(COMPILE)
+$(BIN)/diskette_diags:   $(OBJ)/diskette_diags.o   $(LIBS); @$(LINK)
+$(OBJ)/display_shorts.o:          display_shorts.c\
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(SRN)/display_shorts.t        \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/st.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/display_shorts:   $(OBJ)/display_shorts.o   $(LIBS); @$(LINK)
+$(OBJ)/dlc.o:                     dlc.c\
+   $(INC)/file_names.h            \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/zone_status.h           ; @$(COMPILE)
+$(BIN)/dlc:   $(OBJ)/dlc.o   $(LIBS); @$(LINK)
+$(OBJ)/e_d_res_tick_prnt.o:       e_d_res_tick_prnt.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/e_d_res_tick_prnt.t     ; @$(COMPILE)
+$(BIN)/e_d_res_tick_prnt:   $(OBJ)/e_d_res_tick_prnt.o   $(LIBS); @$(LINK)
+$(OBJ)/fix_letters.o:             fix_letters.c; @$(COMPILE)
+$(BIN)/fix_letters:   $(OBJ)/fix_letters.o   $(LIBS); @$(LINK)
+$(OBJ)/group_comms.o:             group_comms.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(SRN)/group_comms.t           \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/xt.h                    \
+   $(INC)/language.h              \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/group_comms:   $(OBJ)/group_comms.o   $(LIBS); @$(LINK)
+$(OBJ)/hw_init.o:                 hw_init.c\
+   $(INC)/file_names.h            \
+   $(INC)/message_types.h         \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    ; @$(COMPILE)
+$(BIN)/hw_init:   $(OBJ)/hw_init.o   $(LIBS); @$(LINK)
+$(OBJ)/inhibit_enable_pm.o:       inhibit_enable_pm.c\
+   $(INC)/global_types.h          \
+   $(INC)/getparms.h              \
+   $(INC)/message_types.h         \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/language.h              \
+   $(SRN)/inhibit_enable_pm.t     \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/st.h                    ; @$(COMPILE)
+$(BIN)/inhibit_enable_pm:   $(OBJ)/inhibit_enable_pm.o   $(LIBS); @$(LINK)
+$(OBJ)/initialization.o:          initialization.c\
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/message_types.h         \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(SRN)/initialization.t        \
+   $(INC)/eh_nos.h                ; @$(COMPILE)
+$(BIN)/initialization:   $(OBJ)/initialization.o   $(LIBS); @$(LINK)
+$(OBJ)/input_editor.o:            input_editor.c\
+   $(INC)/sd.h                    ; @$(COMPILE)
+$(BIN)/input_editor:   $(OBJ)/input_editor.o   $(LIBS); @$(LINK)
+$(OBJ)/ins_pm_screen.o:           ins_pm_screen.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/ins_pm_screen.t         \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/ins_pm_screen:   $(OBJ)/ins_pm_screen.o   $(LIBS); @$(LINK)
+$(OBJ)/item_move_create.o:        item_move_create.c\
+   $(INC)/file_names.h            \
+   $(INC)/iodefs.h                \
+   $(INC)/co.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/bard/prodfile.h         \
+   $(SRN)/item_move_report.t      ; @$(COMPILE)
+$(BIN)/item_move_create:   $(OBJ)/item_move_create.o   $(LIBS); @$(LINK)
+$(OBJ)/item_move_input.o:         item_move_input.c\
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/item_move_input.t       ; @$(COMPILE)
+$(BIN)/item_move_input:   $(OBJ)/item_move_input.o   $(LIBS); @$(LINK)
+$(OBJ)/logon.o:                   logon.c\
+   $(INC)/file_names.h            ; @$(COMPILE)
+$(BIN)/logon:   $(OBJ)/logon.o   $(LIBS); @$(LINK)
+$(OBJ)/lot_control.o:             lot_control.c\
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/getparms.h              \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(SRN)/lot_control.t           \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/lot.h              ; @$(COMPILE)
+$(BIN)/lot_control:   $(OBJ)/lot_control.o   $(LIBS); @$(LINK)
+$(OBJ)/manpower_input.o:          manpower_input.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/file_names.h            \
+   $(SRN)/manpower_input.t        \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/manpower_input:   $(OBJ)/manpower_input.o   $(LIBS); @$(LINK)
+$(OBJ)/message_view.o:            message_view.c\
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/iodefs.h                \
+   $(SRN)/message_view.t          \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/maint_log.h        ; @$(COMPILE)
+$(BIN)/message_view:   $(OBJ)/message_view.o   $(LIBS); @$(LINK)
+$(OBJ)/mmenu.o:                   mmenu.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(SRN)/mmenu.t                 \
+   $(INC)/eh_nos.h                \
+   $(INC)/getparms.h              ; @$(COMPILE)
+$(BIN)/mmenu:   $(OBJ)/mmenu.o   $(LIBS); @$(LINK)
+$(OBJ)/notice_printer.o:          notice_printer.c\
+   $(INC)/file_names.h            \
+   $(INC)/global_types.h          \
+   $(INC)/message_types.h         \
+   $(INC)/ss.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/bard/short_notice.h     \
+   $(INC)/bard/restock_notice.h   ; @$(COMPILE)
+$(BIN)/notice_printer:   $(OBJ)/notice_printer.o   $(LIBS); @$(LINK)
+$(OBJ)/ofc.o:                     ofc.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/global_types.h          \
+   $(INC)/file_names.h            \
+   $(INC)/eh_nos.h                \
+   $(INC)/box.h                   \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/pr.h                    \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/zone_status.h           \
+   $(INC)/picker_acct.h           \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/picker.h           \
+   $(INC)/bard/picker_order.h     \
+   $(INC)/bard/remarks.h          \
+   $(INC)/boxes.h                 \
+   $(INC)/sections.h              ; @$(COMPILE)
+$(BIN)/ofc:   $(OBJ)/ofc.o   $(LIBS); @$(LINK)
+$(OBJ)/op_logoff.o:               op_logoff.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    ; @$(COMPILE)
+$(BIN)/op_logoff:   $(OBJ)/op_logoff.o   $(LIBS); @$(LINK)
+$(OBJ)/op_logon.o:                op_logon.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/caps_version.h          \
+   $(INC)/message_types.h         \
+   $(SRN)/motd.t                  \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/operator.h         ; @$(COMPILE)
+$(BIN)/op_logon:   $(OBJ)/op_logon.o   $(LIBS); @$(LINK)
+$(OBJ)/operm.o:                   operm.c\
+   $(INC)/global_types.h          \
+   $(INC)/file_names.h            \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(SRN)/operm.t                 \
+   $(INC)/eh_nos.h                \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/getparms.h              \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/operm:   $(OBJ)/operm.o   $(LIBS); @$(LINK)
+$(OBJ)/order_comms.o:             order_comms.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/global_types.h          \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(SRN)/order_comms.t           \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/language.h              \
+   $(INC)/box.h                   \
+   $(INC)/Bard.h                  \
+   $(INC)/boxes.h                 ; @$(COMPILE)
+$(BIN)/order_comms:   $(OBJ)/order_comms.o   $(LIBS); @$(LINK)
+$(OBJ)/order_display.o:           order_display.c\
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/language.h              \
+   $(SRN)/order_display.t         \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/order_display:   $(OBJ)/order_display.o   $(LIBS); @$(LINK)
+$(OBJ)/order_entry.o:             order_entry.c\
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(SRN)/order_entry.t           \
+   $(INC)/eh_nos.h                \
+   $(INC)/xt.h                    ; @$(COMPILE)
+$(BIN)/order_entry:   $(OBJ)/order_entry.o   $(LIBS); @$(LINK)
+$(OBJ)/order_input.o:             order_input.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/global_types.h          \
+   $(INC)/of.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/xt.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    \
+   $(INC)/zone_status.h           \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/Bard.h                  \
+   $(INC)/box.h                   \
+   $(INC)/boxes.h                 ; @$(COMPILE)
+$(BIN)/order_input:   $(OBJ)/order_input.o   $(LIBS); @$(LINK)
+$(OBJ)/order_input_menu.o:        order_input_menu.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(SRN)/order_input_menu.t      \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/order_input_menu:   $(OBJ)/order_input_menu.o   $(LIBS); @$(LINK)
+$(OBJ)/order_picks.o:             order_picks.c\
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(SRN)/order_picks.t           \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/st.h                    \
+   $(INC)/language.h              \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/order_picks:   $(OBJ)/order_picks.o   $(LIBS); @$(LINK)
+$(OBJ)/order_purge.o:             order_purge.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/global_types.h          \
+   $(INC)/message_types.h         \
+   $(INC)/of.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/box.h                   \
+   $(INC)/Bard.h                  \
+   $(INC)/boxes.h                 ; @$(COMPILE)
+$(BIN)/order_purge:   $(OBJ)/order_purge.o   $(LIBS); @$(LINK)
+$(OBJ)/order_stat.o:              order_stat.c\
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/language.h              \
+   $(SRN)/order_stat.t            \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/getparms.h              \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/order_stat:   $(OBJ)/order_stat.o   $(LIBS); @$(LINK)
+$(OBJ)/order_unload.o:            order_unload.c\
+   $(INC)/ss.h                    \
+   $(INC)/st.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/bard/prodfile.h         ; @$(COMPILE)
+$(BIN)/order_unload:   $(OBJ)/order_unload.o   $(LIBS); @$(LINK)
+$(OBJ)/orphan_picks.o:            orphan_picks.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/st.h                    \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/orphan_picks:   $(OBJ)/orphan_picks.o   $(LIBS); @$(LINK)
+$(OBJ)/packing_list.o:            packing_list.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    \
+   $(INC)/box.h                   \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/custom/noxell/remarks_text.h\
+   $(INC)/custom/noxell/pick_text.h\
+   $(INC)/custom/noxell/packing_list.h; @$(COMPILE)
+$(BIN)/packing_list:   $(OBJ)/packing_list.o   $(LIBS); @$(LINK)
+$(OBJ)/pfead.o:                   pfead.c\
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/pfead.t                 ; @$(COMPILE)
+$(BIN)/pfead:   $(OBJ)/pfead.o   $(LIBS); @$(LINK)
+$(OBJ)/pfead_inventory.o:         pfead_inventory.c\
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/pfead_inventory.t       ; @$(COMPILE)
+$(BIN)/pfead_inventory:   $(OBJ)/pfead_inventory.o   $(LIBS); @$(LINK)
+$(OBJ)/pfead_pmfile.o:            pfead_pmfile.c\
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/pfead_pmfile.t          ; @$(COMPILE)
+$(BIN)/pfead_pmfile:   $(OBJ)/pfead_pmfile.o   $(LIBS); @$(LINK)
+$(OBJ)/pfead_prodfile.o:          pfead_prodfile.c\
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/pfead_prodfile.t        ; @$(COMPILE)
+$(BIN)/pfead_prodfile:   $(OBJ)/pfead_prodfile.o   $(LIBS); @$(LINK)
+$(OBJ)/pfead_reports.o:           pfead_reports.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/pfead_reports.t         ; @$(COMPILE)
+$(BIN)/pfead_reports:   $(OBJ)/pfead_reports.o   $(LIBS); @$(LINK)
+$(OBJ)/pff_inquiry_create.o:      pff_inquiry_create.c\
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/pff_defs.h              \
+   $(SRN)/pff_inquiry_report.t    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/pff_inquiry_create:   $(OBJ)/pff_inquiry_create.o   $(LIBS); @$(LINK)
+$(OBJ)/pff_inquiry_input.o:       pff_inquiry_input.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/getparms.h              \
+   $(INC)/pff_defs.h              \
+   $(SRN)/pff_inquiry_input.t     \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/pff_inquiry_input:   $(OBJ)/pff_inquiry_input.o   $(LIBS); @$(LINK)
+$(OBJ)/pff_inquiry_report.o:      pff_inquiry_report.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/pff_inquiry_report.t    ; @$(COMPILE)
+$(BIN)/pff_inquiry_report:   $(OBJ)/pff_inquiry_report.o   $(LIBS); @$(LINK)
+$(OBJ)/pff_print.o:               pff_print.c\
+   $(INC)/iodefs.h                ; @$(COMPILE)
+$(BIN)/pff_print:   $(OBJ)/pff_print.o   $(LIBS); @$(LINK)
+$(OBJ)/pfq_report.o:              pfq_report.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/pfq_report.t            ; @$(COMPILE)
+$(BIN)/pfq_report:   $(OBJ)/pfq_report.o   $(LIBS); @$(LINK)
+$(OBJ)/pick_loc_create.o:         pick_loc_create.c\
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(SRN)/pick_loc_report.t       \
+   $(INC)/imt.h                   \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/pick_loc_create:   $(OBJ)/pick_loc_create.o   $(LIBS); @$(LINK)
+$(OBJ)/pick_loc_input.o:          pick_loc_input.c\
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/pick_loc_input.t        ; @$(COMPILE)
+$(BIN)/pick_loc_input:   $(OBJ)/pick_loc_input.o   $(LIBS); @$(LINK)
+$(OBJ)/pick_rate_entry.o:         pick_rate_entry.c\
+   $(INC)/file_names.h            \
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/pick_rate_entry.t       ; @$(COMPILE)
+$(BIN)/pick_rate_entry:   $(OBJ)/pick_rate_entry.o   $(LIBS); @$(LINK)
+$(OBJ)/pick_update_db.o:          pick_update_db.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/file_names.h            \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/eh_nos.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/pr.h                    \
+   $(INC)/xt.h                    \
+   $(INC)/box.h                   \
+   $(INC)/zone_status.h           \
+   $(INC)/sections.h              \
+   $(INC)/order_cust_c.h          \
+   $(INC)/date_mani_c.h           \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/boxes.h                 \
+   $(INC)/bard/short_notice.h     \
+   $(INC)/bard/restock_notice.h   \
+   $(INC)/bard/remarks.h          \
+   $(INC)/bard/lot.h              ; @$(COMPILE)
+$(BIN)/pick_update_db:   $(OBJ)/pick_update_db.o   $(LIBS); @$(LINK)
+$(OBJ)/picker_acctability.o:      picker_acctability.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/picker_acctability.t    \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/global_types.h          \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/picker.h           \
+   $(INC)/sections.h              ; @$(COMPILE)
+$(BIN)/picker_acctability:   $(OBJ)/picker_acctability.o   $(LIBS); @$(LINK)
+$(OBJ)/picker_db_clear.o:         picker_db_clear.c\
+   $(INC)/Bard.h                  \
+   $(INC)/bard/picker.h           \
+   $(INC)/bard/picker_order.h     ; @$(COMPILE)
+$(BIN)/picker_db_clear:   $(OBJ)/picker_db_clear.o   $(LIBS); @$(LINK)
+$(OBJ)/picker_error_maint.o:      picker_error_maint.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/pie_menu.t              ; @$(COMPILE)
+$(BIN)/picker_error_maint:   $(OBJ)/picker_error_maint.o   $(LIBS); @$(LINK)
+$(OBJ)/picker_information.o:      picker_information.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/picker_information.t    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/picker.h           ; @$(COMPILE)
+$(BIN)/picker_information:   $(OBJ)/picker_information.o   $(LIBS); @$(LINK)
+$(OBJ)/picker_login_rpt.o:        picker_login_rpt.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/picker_login_rpt.t      \
+   $(INC)/global_types.h          \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/picker.h           \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/picker_login_rpt:   $(OBJ)/picker_login_rpt.o   $(LIBS); @$(LINK)
+$(OBJ)/picker_zero_counts.o:      picker_zero_counts.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/co.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/global_types.h          \
+   $(SRN)/picker_zero_counts.t    \
+   $(INC)/picker_acct.h           \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/picker.h           \
+   $(INC)/bard/picker_order.h     \
+   $(INC)/language.h              \
+   $(INC)/sections.h              ; @$(COMPILE)
+$(BIN)/picker_zero_counts:   $(OBJ)/picker_zero_counts.o   $(LIBS); @$(LINK)
+$(OBJ)/pnmm.o:                    pnmm.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/pnmm.t                  ; @$(COMPILE)
+$(BIN)/pnmm:   $(OBJ)/pnmm.o   $(LIBS); @$(LINK)
+$(OBJ)/prft.o:                    prft.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/iodefs.h                ; @$(COMPILE)
+$(BIN)/prft:   $(OBJ)/prft.o   $(LIBS); @$(LINK)
+$(OBJ)/printer_control.o:         printer_control.c\
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/message_types.h         \
+   $(INC)/language.h              \
+   $(SRN)/berkeley_control.t      ; @$(COMPILE)
+$(BIN)/printer_control:   $(OBJ)/printer_control.o   $(LIBS); @$(LINK)
+$(OBJ)/product_file_query.o:      product_file_query.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/file_names.h            \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/product_file_query.t    ; @$(COMPILE)
+$(BIN)/product_file_query:   $(OBJ)/product_file_query.o   $(LIBS); @$(LINK)
+$(OBJ)/productivity.o:            productivity.c\
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(SRN)/productivity.t          \
+   $(INC)/pr.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/productivity:   $(OBJ)/productivity.o   $(LIBS); @$(LINK)
+$(OBJ)/rap_screen.o:              rap_screen.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/file_names.h            \
+   $(SRN)/receipts_screen.t       \
+   $(SRN)/adjustments_screen.t    \
+   $(SRN)/phys_inv_screen.t       \
+   $(INC)/global_types.h          \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/restock_notice.h   ; @$(COMPILE)
+$(BIN)/rap_screen:   $(OBJ)/rap_screen.o   $(LIBS); @$(LINK)
+$(OBJ)/reconfigure_orders.o:      reconfigure_orders.c\
+   $(INC)/global_types.h          \
+   $(INC)/Bard.h                  \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    ; @$(COMPILE)
+$(BIN)/reconfigure_orders:   $(OBJ)/reconfigure_orders.o   $(LIBS); @$(LINK)
+$(OBJ)/record_format_srn.o:       record_format_srn.c\
+   $(INC)/iodefs.h                \
+   $(INC)/global_types.h          \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/record_format_srn.t     ; @$(COMPILE)
+$(BIN)/record_format_srn:   $(OBJ)/record_format_srn.o   $(LIBS); @$(LINK)
+$(OBJ)/recover_orders.o:          recover_orders.c\
+   $(INC)/global_types.h          \
+   $(INC)/Bard.h                  \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    ; @$(COMPILE)
+$(BIN)/recover_orders:   $(OBJ)/recover_orders.o   $(LIBS); @$(LINK)
+$(OBJ)/release.o:                 release.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/ss.h                    \
+   $(INC)/order_cust_c.h          ; @$(COMPILE)
+$(BIN)/release:   $(OBJ)/release.o   $(LIBS); @$(LINK)
+$(OBJ)/restock_rpt_create.o:      restock_rpt_create.c\
+   $(INC)/file_names.h            \
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(SRN)/restock_report.t        \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/restock_rpt_create:   $(OBJ)/restock_rpt_create.o   $(LIBS); @$(LINK)
+$(OBJ)/restock_rpt_input.o:       restock_rpt_input.c\
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/restock_rpt_input.t     ; @$(COMPILE)
+$(BIN)/restock_rpt_input:   $(OBJ)/restock_rpt_input.o   $(LIBS); @$(LINK)
+$(OBJ)/results_output.o:          results_output.c\
+   $(INC)/file_names.h            \
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/xt.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/of.h                    ; @$(COMPILE)
+$(BIN)/results_output:   $(OBJ)/results_output.o   $(LIBS); @$(LINK)
+$(OBJ)/rp_init.o:                 rp_init.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/file_names.h            \
+   $(INC)/message_types.h         \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/plc.h                   ; @$(COMPILE)
+$(BIN)/rp_init:   $(OBJ)/rp_init.o   $(LIBS); @$(LINK)
+$(OBJ)/save_hw_maps.o:            save_hw_maps.c\
+   $(INC)/file_names.h            \
+   $(INC)/co.h                    \
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/save_hw_maps:   $(OBJ)/save_hw_maps.o   $(LIBS); @$(LINK)
+$(OBJ)/sections_maint.o:          sections_maint.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/sm_menu.t               ; @$(COMPILE)
+$(BIN)/sections_maint:   $(OBJ)/sections_maint.o   $(LIBS); @$(LINK)
+$(OBJ)/select_comms.o:            select_comms.c\
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(SRN)/select_comms.t          \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/xt.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/select_comms:   $(OBJ)/select_comms.o   $(LIBS); @$(LINK)
+$(OBJ)/shipping_label.o:          shipping_label.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(INC)/box.h                   \
+   $(INC)/Bard.h                  \
+   $(INC)/custom/labels/remarks_text.h\
+   $(INC)/custom/labels/shipping_defines.h\
+   $(INC)/custom/labels/shipping_label.h; @$(COMPILE)
+$(BIN)/shipping_label:   $(OBJ)/shipping_label.o   $(LIBS); @$(LINK)
+$(OBJ)/sku_diskette_read.o:       sku_diskette_read.c\
+   $(INC)/ss.h                    \
+   $(INC)/file_names.h            ; @$(COMPILE)
+$(BIN)/sku_diskette_read:   $(OBJ)/sku_diskette_read.o   $(LIBS); @$(LINK)
+$(OBJ)/sku_diskette_write.o:      sku_diskette_write.c\
+   $(INC)/ss.h                    \
+   $(INC)/file_names.h            \
+   $(INC)/eh_nos.h                \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/sku_diskette_write:   $(OBJ)/sku_diskette_write.o   $(LIBS); @$(LINK)
+$(OBJ)/st_init.o:                 st_init.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    \
+   $(INC)/of.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/st_init:   $(OBJ)/st_init.o   $(LIBS); @$(LINK)
+$(OBJ)/stock_stat_create.o:       stock_stat_create.c\
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(SRN)/stock_stat_report.t     ; @$(COMPILE)
+$(BIN)/stock_stat_create:   $(OBJ)/stock_stat_create.o   $(LIBS); @$(LINK)
+$(OBJ)/stock_stat_input.o:        stock_stat_input.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/getparms.h              \
+   $(INC)/language.h              \
+   $(SRN)/stock_stat_input.t      ; @$(COMPILE)
+$(BIN)/stock_stat_input:   $(OBJ)/stock_stat_input.o   $(LIBS); @$(LINK)
+$(OBJ)/stockout_create.o:         stockout_create.c\
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(SRN)/stockout_report.t       \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/stockout_create:   $(OBJ)/stockout_create.o   $(LIBS); @$(LINK)
+$(OBJ)/stockout_input.o:          stockout_input.c\
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/language.h              \
+   $(SRN)/stockout_input.t        ; @$(COMPILE)
+$(BIN)/stockout_input:   $(OBJ)/stockout_input.o   $(LIBS); @$(LINK)
+$(OBJ)/sys_stat.o:                sys_stat.c\
+   $(INC)/Bard.h                  \
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/language.h              \
+   $(SRN)/sys_stat.t              \
+   $(SRN)/display_pending.t       \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/getparms.h              ; @$(COMPILE)
+$(BIN)/sys_stat:   $(OBJ)/sys_stat.o   $(LIBS); @$(LINK)
+$(OBJ)/sys_stat1.o:               sys_stat1.c\
+   $(INC)/Bard.h                  \
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/language.h              \
+   $(SRN)/sys_stat.t              \
+   $(SRN)/display_pending.t       \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/getparms.h              ; @$(COMPILE)
+$(BIN)/sys_stat1:   $(OBJ)/sys_stat1.o   $(LIBS); @$(LINK)
+$(OBJ)/sys_stat2.o:               sys_stat2.c\
+   $(INC)/Bard.h                  \
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/language.h              \
+   $(SRN)/sys_stat2.t             \
+   $(SRN)/display_pending.t       \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/getparms.h              ; @$(COMPILE)
+$(BIN)/sys_stat2:   $(OBJ)/sys_stat2.o   $(LIBS); @$(LINK)
+$(OBJ)/sys_stat3.o:               sys_stat3.c\
+   $(INC)/Bard.h                  \
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/language.h              \
+   $(SRN)/sys_stat3.t             \
+   $(SRN)/display_pending.t       \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/getparms.h              ; @$(COMPILE)
+$(BIN)/sys_stat3:   $(OBJ)/sys_stat3.o   $(LIBS); @$(LINK)
+$(OBJ)/sys_stat4.o:               sys_stat4.c\
+   $(INC)/Bard.h                  \
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/language.h              \
+   $(SRN)/sys_stat2.t             \
+   $(SRN)/display_pending.t       \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/getparms.h              ; @$(COMPILE)
+$(BIN)/sys_stat4:   $(OBJ)/sys_stat4.o   $(LIBS); @$(LINK)
+$(OBJ)/syscomm.o:                 syscomm.c\
+   $(INC)/iodefs.h                \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/kernel.h                \
+   $(INC)/kernel_types.h          \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(SRN)/syscomm.t               \
+   $(INC)/eh_nos.h                \
+   $(INC)/getparms.h              \
+   $(INC)/zone_status.h           ; @$(COMPILE)
+$(BIN)/syscomm:   $(OBJ)/syscomm.o   $(LIBS); @$(LINK)
+$(OBJ)/test_menu.o:               test_menu.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/caps_messages.h         \
+   $(INC)/message_types.h         \
+   $(INC)/eh_nos.h                \
+   $(INC)/getparms.h              \
+   $(SRN)/test_menu.t             ; @$(COMPILE)
+$(BIN)/test_menu:   $(OBJ)/test_menu.o   $(LIBS); @$(LINK)
+$(OBJ)/tote_label.o:              tote_label.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(INC)/box.h                   \
+   $(INC)/Bard.h                  \
+   $(INC)/custom/labels/remarks_text.h\
+   $(INC)/custom/labels/tote_defines.h\
+   $(INC)/custom/labels/tote_label.h; @$(COMPILE)
+$(BIN)/tote_label:   $(OBJ)/tote_label.o   $(LIBS); @$(LINK)
+$(OBJ)/tote_packing_list.o:       tote_packing_list.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    \
+   $(INC)/box.h                   \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/remarks_text.h          \
+   $(INC)/pick_text.h             \
+   $(INC)/packing_list_tote.h     \
+   $(INC)/packing_list_eckerd.h   ; @$(COMPILE)
+$(BIN)/tote_packing_list:   $(OBJ)/tote_packing_list.o   $(LIBS); @$(LINK)
+$(OBJ)/trans_in_aps.o:            trans_in_aps.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/ss.h                    \
+   $(INC)/eckerd_c.h              \
+   $(INC)/order_cust_c.h          ; @$(COMPILE)
+$(BIN)/trans_in_aps:   $(OBJ)/trans_in_aps.o   $(LIBS); @$(LINK)
+$(OBJ)/trans_out_aps.o:           trans_out_aps.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/ss.h                    \
+   $(INC)/order_cust_c.h          ; @$(COMPILE)
+$(BIN)/trans_out_aps:   $(OBJ)/trans_out_aps.o   $(LIBS); @$(LINK)
+$(OBJ)/trans_server.o:            trans_server.c\
+   $(INC)/xt.h                    \
+   $(INC)/caps_messages.h         \
+   $(INC)/message_types.h         ; @$(COMPILE)
+$(BIN)/trans_server:   $(OBJ)/trans_server.o   $(LIBS); @$(LINK)
+$(OBJ)/transac_copy.o:            transac_copy.c\
+   $(INC)/Bard.h                  \
+   $(INC)/global_types.h          \
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/xt.h                    ; @$(COMPILE)
+$(BIN)/transac_copy:   $(OBJ)/transac_copy.o   $(LIBS); @$(LINK)
+$(OBJ)/transac_format_srn.o:      transac_format_srn.c\
+   $(INC)/iodefs.h                \
+   $(INC)/global_types.h          \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/transac_format_srn.t    ; @$(COMPILE)
+$(BIN)/transac_format_srn:   $(OBJ)/transac_format_srn.o   $(LIBS); @$(LINK)
+$(OBJ)/transac_output.o:          transac_output.c\
+   $(INC)/file_names.h            \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/xt.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/transac_output.t        \
+   $(INC)/language.h              \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/transac_output:   $(OBJ)/transac_output.o   $(LIBS); @$(LINK)
+$(OBJ)/transac_review.o:          transac_review.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(SRN)/transac_review.t        \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    \
+   $(INC)/xt.h                    \
+   $(INC)/of.h                    \
+   $(INC)/getparms.h              \
+   $(INC)/language.h              \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/transac_review:   $(OBJ)/transac_review.o   $(LIBS); @$(LINK)
+$(OBJ)/transac_short_rpt.o:       transac_short_rpt.c\
+   $(INC)/Bard.h                  \
+   $(INC)/ss.h                    \
+   $(INC)/xt.h                    ; @$(COMPILE)
+$(BIN)/transac_short_rpt:   $(OBJ)/transac_short_rpt.o   $(LIBS); @$(LINK)
+$(OBJ)/tty_server.o:              tty_server.c\
+   $(INC)/file_names.h            \
+   $(INC)/tty_data.h              \
+   $(INC)/eh.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/message.h               \
+   $(INC)/message_types.h         \
+   $(INC)/kernel_types.h          ; @$(COMPILE)
+$(BIN)/tty_server:   $(OBJ)/tty_server.o   $(LIBS); @$(LINK)
+$(OBJ)/view_menu.o:               view_menu.c\
+   $(INC)/iodefs.h                \
+   $(INC)/ss.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/eh_nos.h                \
+   $(SRN)/view_menu.t             ; @$(COMPILE)
+$(BIN)/view_menu:   $(OBJ)/view_menu.o   $(LIBS); @$(LINK)
+$(OBJ)/zero_counts.o:             zero_counts.c\
+   $(INC)/getparms.h              \
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(SRN)/zero_counts.t           \
+   $(INC)/ss.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/language.h              \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/zero_counts:   $(OBJ)/zero_counts.o   $(LIBS); @$(LINK)
+$(OBJ)/zero_move_counts.o:        zero_move_counts.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/getparms.h              \
+   $(INC)/imt.h                   \
+   $(SRN)/zero_move_counts.t      \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/zero_move_counts:   $(OBJ)/zero_move_counts.o   $(LIBS); @$(LINK)
+$(OBJ)/zero_prod_counts.o:        zero_prod_counts.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(SRN)/zero_prod_counts.t      \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/pr.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/language.h              \
+   $(INC)/sections.h              ; @$(COMPILE)
+$(BIN)/zero_prod_counts:   $(OBJ)/zero_prod_counts.o   $(LIBS); @$(LINK)
+$(OBJ)/zone_bal_input.o:          zone_bal_input.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/iodefs.h                \
+   $(INC)/file_names.h            \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/getparms.h              \
+   $(SRN)/zone_bal_input.t        \
+   $(INC)/language.h              ; @$(COMPILE)
+$(BIN)/zone_bal_input:   $(OBJ)/zone_bal_input.o   $(LIBS); @$(LINK)
+$(OBJ)/zone_stat.o:               zone_stat.c\
+   $(INC)/global_types.h          \
+   $(INC)/iodefs.h                \
+   $(INC)/getparms.h              \
+   $(INC)/sd.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/eh_nos.h                \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(SRN)/zone_stat1.t            \
+   $(SRN)/zone_stat2.t            \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/zone_stat:   $(OBJ)/zone_stat.o   $(LIBS); @$(LINK)
+
+#--------------------------------------------------------------------------#
+#  clean progs
+#
+cleanall:: cleanprogs
+cleanprogs:
+	@echo "Removing progs Objects"
+	@-cd $(OBJ); rm $(PROGS:.c=.o)
+	@echo "Removing progs Binaries"
+	@-cd $(BIN); rm $(PROGS:.c=)
+
+#--------------------------------------------------------------------------#
+#  print progs
+#
+printall:: printprogs
+printprogs: lastprint
+lastprint:: $(PROGS); @$(PRINT)
+
