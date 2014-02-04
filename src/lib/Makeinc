@@ -1,0 +1,605 @@
+#--------------------------------------------------------------------------#
+#  lib sources
+#
+LIB=\
+   Bdate.c\
+   Bdump.c\
+   Blike.c\
+   Debug.c\
+   Message_Data.c\
+   Message_GNW.c\
+   Message_Get.c\
+   Message_Open.c\
+   Message_Put.c\
+   ac_checksum.c\
+   ac_close.c\
+   ac_download.c\
+   ac_open.c\
+   ac_read.c\
+   ac_readdress.c\
+   ac_readout.c\
+   ac_reset.c\
+   ac_softreset.c\
+   ac_write.c\
+   basename.c\
+   break_fields.c\
+   brf_close.c\
+   brf_lock.c\
+   brf_open.c\
+   brf_unlock.c\
+   change_logon.c\
+   chng_pkln.c\
+   co_close.c\
+   co_lock.c\
+   co_open.c\
+   co_unlock.c\
+   code_to_caps.c\
+   delay.c\
+   eh_post.c\
+   eh_postn.c\
+   errlog.c\
+   fix.c\
+   getparms.c\
+   inanycase.c\
+   is_co_locked.c\
+   is_dsk_ready.c\
+   krash.c\
+   loadfeatures.c\
+   log_entry.c\
+   message_clos.c\
+   message_get.c\
+   message_gnw.c\
+   message_open.c\
+   message_pass.c\
+   message_put.c\
+   message_sig.c\
+   message_slct.c\
+   message_wait.c\
+   mod_lookup.c\
+   oc_close.c\
+   oc_delete.c\
+   oc_dequeue.c\
+   oc_enqueue.c\
+   oc_find.c\
+   oc_find_con.c\
+   oc_lock.c\
+   oc_open.c\
+   oc_unlock.c\
+   oc_write.c\
+   od_close.c\
+   od_config.c\
+   od_dealloc.c\
+   od_delete.c\
+   od_fetch.c\
+   od_move.c\
+   od_open.c\
+   od_repick.c\
+   od_status.c\
+   od_update.c\
+   pl_lookup.c\
+   port_lookup.c\
+   ppf_close.c\
+   ppf_lock.c\
+   ppf_open.c\
+   ppf_unlock.c\
+   pr_close.c\
+   pr_lock.c\
+   pr_open.c\
+   pr_unlock.c\
+   ptf_close.c\
+   ptf_lock.c\
+   ptf_open.c\
+   ptf_unlock.c\
+   sd_catcher.c\
+   sd_clear.c\
+   sd_close.c\
+   sd_cursor.c\
+   sd_data.c\
+   sd_early.c\
+   sd_input.c\
+   sd_keystroke.c\
+   sd_more.c\
+   sd_msg.c\
+   sd_next.c\
+   sd_open.c\
+   sd_out.c\
+   sd_print.c\
+   sd_prompt.c\
+   sd_tab.c\
+   sd_text.c\
+   signal_catch.c\
+   sku_lookup.c\
+   space_fill.c\
+   ss_close.c\
+   ss_lock.c\
+   ss_open.c\
+   ss_unlock.c\
+   stkloc_lookup.c\
+   strip_space.c\
+   ta_data.c\
+   tc_checksum.c\
+   tc_close.c\
+   tc_download.c\
+   tc_read.c\
+   tc_readdress.c\
+   tc_readout.c\
+   tc_write.c\
+   td.c\
+   td_data.c\
+   td_driver.c\
+   td_help.c\
+   td_pr.c\
+   time_convert.c\
+   tmp_name.c\
+   xf_routines.c\
+   xt_build.c\
+   xt_close.c\
+   xt_open.c
+
+#--------------------------------------------------------------------------#
+#  lib targets
+#
+all::	lib
+lib:\
+   $(LLIB)(Bdate.o)\
+   $(LLIB)(Bdump.o)\
+   $(LLIB)(Blike.o)\
+   $(LLIB)(Debug.o)\
+   $(LLIB)(Message_Data.o)\
+   $(LLIB)(Message_GNW.o)\
+   $(LLIB)(Message_Get.o)\
+   $(LLIB)(Message_Open.o)\
+   $(LLIB)(Message_Put.o)\
+   $(LLIB)(ac_checksum.o)\
+   $(LLIB)(ac_close.o)\
+   $(LLIB)(ac_download.o)\
+   $(LLIB)(ac_open.o)\
+   $(LLIB)(ac_read.o)\
+   $(LLIB)(ac_readdress.o)\
+   $(LLIB)(ac_readout.o)\
+   $(LLIB)(ac_reset.o)\
+   $(LLIB)(ac_softreset.o)\
+   $(LLIB)(ac_write.o)\
+   $(LLIB)(basename.o)\
+   $(LLIB)(break_fields.o)\
+   $(LLIB)(brf_close.o)\
+   $(LLIB)(brf_lock.o)\
+   $(LLIB)(brf_open.o)\
+   $(LLIB)(brf_unlock.o)\
+   $(LLIB)(change_logon.o)\
+   $(LLIB)(chng_pkln.o)\
+   $(LLIB)(co_close.o)\
+   $(LLIB)(co_lock.o)\
+   $(LLIB)(co_open.o)\
+   $(LLIB)(co_unlock.o)\
+   $(LLIB)(code_to_caps.o)\
+   $(LLIB)(delay.o)\
+   $(LLIB)(eh_post.o)\
+   $(LLIB)(eh_postn.o)\
+   $(LLIB)(errlog.o)\
+   $(LLIB)(fix.o)\
+   $(LLIB)(getparms.o)\
+   $(LLIB)(inanycase.o)\
+   $(LLIB)(is_co_locked.o)\
+   $(LLIB)(is_dsk_ready.o)\
+   $(LLIB)(krash.o)\
+   $(LLIB)(loadfeatures.o)\
+   $(LLIB)(log_entry.o)\
+   $(LLIB)(message_clos.o)\
+   $(LLIB)(message_get.o)\
+   $(LLIB)(message_gnw.o)\
+   $(LLIB)(message_open.o)\
+   $(LLIB)(message_pass.o)\
+   $(LLIB)(message_put.o)\
+   $(LLIB)(message_sig.o)\
+   $(LLIB)(message_slct.o)\
+   $(LLIB)(message_wait.o)\
+   $(LLIB)(mod_lookup.o)\
+   $(LLIB)(oc_close.o)\
+   $(LLIB)(oc_delete.o)\
+   $(LLIB)(oc_dequeue.o)\
+   $(LLIB)(oc_enqueue.o)\
+   $(LLIB)(oc_find.o)\
+   $(LLIB)(oc_find_con.o)\
+   $(LLIB)(oc_lock.o)\
+   $(LLIB)(oc_open.o)\
+   $(LLIB)(oc_unlock.o)\
+   $(LLIB)(oc_write.o)\
+   $(LLIB)(od_close.o)\
+   $(LLIB)(od_config.o)\
+   $(LLIB)(od_dealloc.o)\
+   $(LLIB)(od_delete.o)\
+   $(LLIB)(od_fetch.o)\
+   $(LLIB)(od_move.o)\
+   $(LLIB)(od_open.o)\
+   $(LLIB)(od_repick.o)\
+   $(LLIB)(od_status.o)\
+   $(LLIB)(od_update.o)\
+   $(LLIB)(pl_lookup.o)\
+   $(LLIB)(port_lookup.o)\
+   $(LLIB)(ppf_close.o)\
+   $(LLIB)(ppf_lock.o)\
+   $(LLIB)(ppf_open.o)\
+   $(LLIB)(ppf_unlock.o)\
+   $(LLIB)(pr_close.o)\
+   $(LLIB)(pr_lock.o)\
+   $(LLIB)(pr_open.o)\
+   $(LLIB)(pr_unlock.o)\
+   $(LLIB)(ptf_close.o)\
+   $(LLIB)(ptf_lock.o)\
+   $(LLIB)(ptf_open.o)\
+   $(LLIB)(ptf_unlock.o)\
+   $(LLIB)(sd_catcher.o)\
+   $(LLIB)(sd_clear.o)\
+   $(LLIB)(sd_close.o)\
+   $(LLIB)(sd_cursor.o)\
+   $(LLIB)(sd_data.o)\
+   $(LLIB)(sd_early.o)\
+   $(LLIB)(sd_input.o)\
+   $(LLIB)(sd_keystroke.o)\
+   $(LLIB)(sd_more.o)\
+   $(LLIB)(sd_msg.o)\
+   $(LLIB)(sd_next.o)\
+   $(LLIB)(sd_open.o)\
+   $(LLIB)(sd_out.o)\
+   $(LLIB)(sd_print.o)\
+   $(LLIB)(sd_prompt.o)\
+   $(LLIB)(sd_tab.o)\
+   $(LLIB)(sd_text.o)\
+   $(LLIB)(signal_catch.o)\
+   $(LLIB)(sku_lookup.o)\
+   $(LLIB)(space_fill.o)\
+   $(LLIB)(ss_close.o)\
+   $(LLIB)(ss_lock.o)\
+   $(LLIB)(ss_open.o)\
+   $(LLIB)(ss_unlock.o)\
+   $(LLIB)(stkloc_lookup.o)\
+   $(LLIB)(strip_space.o)\
+   $(LLIB)(ta_data.o)\
+   $(LLIB)(tc_checksum.o)\
+   $(LLIB)(tc_close.o)\
+   $(LLIB)(tc_download.o)\
+   $(LLIB)(tc_read.o)\
+   $(LLIB)(tc_readdress.o)\
+   $(LLIB)(tc_readout.o)\
+   $(LLIB)(tc_write.o)\
+   $(LLIB)(td.o)\
+   $(LLIB)(td_data.o)\
+   $(LLIB)(td_driver.o)\
+   $(LLIB)(td_help.o)\
+   $(LLIB)(td_pr.o)\
+   $(LLIB)(time_convert.o)\
+   $(LLIB)(tmp_name.o)\
+   $(LLIB)(xf_routines.o)\
+   $(LLIB)(xt_build.o)\
+   $(LLIB)(xt_close.o)\
+   $(LLIB)(xt_open.o)
+	@echo lib is up to date
+
+#--------------------------------------------------------------------------#
+#  lib dependencies
+#
+$(LLIB)(Bdate.o):	                   Bdate.c
+$(LLIB)(Bdump.o):	                   Bdump.c
+$(LLIB)(Blike.o):	                   Blike.c
+$(LLIB)(Debug.o):	                   Debug.c
+$(LLIB)(Message_Data.o):	            Message_Data.c
+$(LLIB)(Message_GNW.o):	             Message_GNW.c\
+   $(INC)/message.h               
+$(LLIB)(Message_Get.o):	             Message_Get.c\
+   $(INC)/message.h               
+$(LLIB)(Message_Open.o):	            Message_Open.c\
+   $(INC)/message.h               
+$(LLIB)(Message_Put.o):	             Message_Put.c\
+   $(INC)/message.h               
+$(LLIB)(ac_checksum.o):	             ac_checksum.c
+$(LLIB)(ac_close.o):	                ac_close.c
+$(LLIB)(ac_download.o):	             ac_download.c
+$(LLIB)(ac_open.o):	                 ac_open.c\
+   $(INC)/caps_copyright.h
+$(LLIB)(ac_read.o):	                 ac_read.c
+$(LLIB)(ac_readdress.o):	            ac_readdress.c\
+   $(INC)/caps_copyright.h
+$(LLIB)(ac_readout.o):	              ac_readout.c
+$(LLIB)(ac_reset.o):	                ac_reset.c
+$(LLIB)(ac_softreset.o):	            ac_softreset.c\
+   $(INC)/caps_copyright.h
+$(LLIB)(ac_write.o):	                ac_write.c
+$(LLIB)(basename.o):	                basename.c
+$(LLIB)(break_fields.o):	            break_fields.c
+$(LLIB)(brf_close.o):	               brf_close.c
+$(LLIB)(brf_lock.o):	                brf_lock.c
+$(LLIB)(brf_open.o):	                brf_open.c\
+   $(INC)/file_names.h            
+$(LLIB)(brf_unlock.o):	              brf_unlock.c
+$(LLIB)(change_logon.o):	            change_logon.c
+$(LLIB)(chng_pkln.o):	               chng_pkln.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(co_close.o):	                co_close.c\
+   $(INC)/file_names.h            \
+   $(INC)/co.h                    
+$(LLIB)(co_lock.o):	                 co_lock.c\
+   $(INC)/co.h                    
+$(LLIB)(co_open.o):	                 co_open.c\
+   $(INC)/file_names.h            \
+   $(INC)/co_open.h               
+$(LLIB)(co_unlock.o):	               co_unlock.c\
+   $(INC)/co.h                    
+$(LLIB)(code_to_caps.o):	            code_to_caps.c
+$(LLIB)(delay.o):	                   delay.c
+$(LLIB)(eh_post.o):	                 eh_post.c\
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         \
+   $(INC)/eh.h                    
+$(LLIB)(eh_postn.o):	                eh_postn.c
+$(LLIB)(errlog.o):	                  errlog.c\
+   $(INC)/file_names.h            
+$(LLIB)(fix.o):	                     fix.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    
+$(LLIB)(getparms.o):	                getparms.c
+$(LLIB)(inanycase.o):	               inanycase.c
+$(LLIB)(is_co_locked.o):	            is_co_locked.c\
+   $(INC)/co.h                    \
+   $(INC)/eh_nos.h                
+$(LLIB)(is_dsk_ready.o):	            is_dsk_ready.c
+$(LLIB)(krash.o):	                   krash.c
+$(LLIB)(loadfeatures.o):	            loadfeatures.c\
+   $(INC)/file_names.h            \
+   $(INC)/features.h              
+$(LLIB)(log_entry.o):	               log_entry.c\
+   $(INC)/ss.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/maint_log.h        
+$(LLIB)(message_clos.o):	            message_clos.c\
+   $(INC)/kernel_types.h          \
+   $(INC)/message.h               
+$(LLIB)(message_get.o):	             message_get.c\
+   $(INC)/message.h               \
+   $(INC)/kernel_types.h          
+$(LLIB)(message_gnw.o):	             message_gnw.c\
+   $(INC)/message.h               \
+   $(INC)/kernel_types.h          
+$(LLIB)(message_open.o):	            message_open.c\
+   $(INC)/message.h               \
+   $(INC)/message_types.h         \
+   $(INC)/kernel_types.h          
+$(LLIB)(message_pass.o):	            message_pass.c\
+   $(INC)/message.h               \
+   $(INC)/kernel_types.h          
+$(LLIB)(message_put.o):	             message_put.c\
+   $(INC)/message.h               \
+   $(INC)/kernel_types.h          
+$(LLIB)(message_sig.o):	             message_sig.c\
+   $(INC)/message.h               \
+   $(INC)/kernel_types.h          
+$(LLIB)(message_slct.o):	            message_slct.c\
+   $(INC)/message.h               \
+   $(INC)/kernel_types.h          
+$(LLIB)(message_wait.o):	            message_wait.c\
+   $(INC)/message.h               
+$(LLIB)(mod_lookup.o):	              mod_lookup.c\
+   $(INC)/co.h                    \
+   $(INC)/st.h                    
+$(LLIB)(oc_close.o):	                oc_close.c\
+   $(INC)/file_names.h            \
+   $(INC)/of.h                    
+$(LLIB)(oc_delete.o):	               oc_delete.c\
+   $(INC)/of.h                    
+$(LLIB)(oc_dequeue.o):	              oc_dequeue.c\
+   $(INC)/of.h                    
+$(LLIB)(oc_enqueue.o):	              oc_enqueue.c\
+   $(INC)/global_types.h          \
+   $(INC)/of.h                    
+$(LLIB)(oc_find.o):	                 oc_find.c\
+   $(INC)/of.h                    
+$(LLIB)(oc_find_con.o):	             oc_find_con.c\
+   $(INC)/of.h                    \
+   $(INC)/ss.h                    
+$(LLIB)(oc_lock.o):	                 oc_lock.c\
+   $(INC)/of.h                    
+$(LLIB)(oc_open.o):	                 oc_open.c\
+   $(INC)/file_names.h            \
+   $(INC)/oc_open.h               
+$(LLIB)(oc_unlock.o):	               oc_unlock.c\
+   $(INC)/of.h                    
+$(LLIB)(oc_write.o):	                oc_write.c\
+   $(INC)/of.h                    
+$(LLIB)(od_close.o):	                od_close.c\
+   $(INC)/Bard.h                  \
+   $(INC)/of.h                    
+$(LLIB)(od_config.o):	               od_config.c\
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/st.h                    \
+   $(INC)/Bard.h                  
+$(LLIB)(od_dealloc.o):	              od_dealloc.c\
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           
+$(LLIB)(od_delete.o):	               od_delete.c\
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(INC)/Bard.h                  
+$(LLIB)(od_fetch.o):	                od_fetch.c\
+   $(INC)/of.h                    \
+   $(INC)/Bard.h                  
+$(LLIB)(od_move.o):	                 od_move.c\
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(INC)/ss.h                    \
+   $(INC)/st.h                    \
+   $(INC)/Bard.h                  
+$(LLIB)(od_open.o):	                 od_open.c\
+   $(INC)/Bard.h                  \
+   $(INC)/of.h                    \
+   $(INC)/od_open.h               
+$(LLIB)(od_repick.o):	               od_repick.c\
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    \
+   $(INC)/Bard.h                  
+$(LLIB)(od_status.o):	               od_status.c\
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/zone_status.h           
+$(LLIB)(od_update.o):	               od_update.c\
+   $(INC)/Bard.h                  \
+   $(INC)/of.h                    
+$(LLIB)(pl_lookup.o):	               pl_lookup.c\
+   $(INC)/co.h                    
+$(LLIB)(port_lookup.o):	             port_lookup.c\
+   $(INC)/co.h                    
+$(LLIB)(ppf_close.o):	               ppf_close.c
+$(LLIB)(ppf_lock.o):	                ppf_lock.c
+$(LLIB)(ppf_open.o):	                ppf_open.c\
+   $(INC)/file_names.h            
+$(LLIB)(ppf_unlock.o):	              ppf_unlock.c
+$(LLIB)(pr_close.o):	                pr_close.c\
+   $(INC)/file_names.h            \
+   $(INC)/pr.h                    
+$(LLIB)(pr_lock.o):	                 pr_lock.c\
+   $(INC)/pr.h                    
+$(LLIB)(pr_open.o):	                 pr_open.c\
+   $(INC)/file_names.h            \
+   $(INC)/pr_open.h               
+$(LLIB)(pr_unlock.o):	               pr_unlock.c\
+   $(INC)/pr.h                    
+$(LLIB)(ptf_close.o):	               ptf_close.c
+$(LLIB)(ptf_lock.o):	                ptf_lock.c
+$(LLIB)(ptf_open.o):	                ptf_open.c\
+   $(INC)/file_names.h            
+$(LLIB)(ptf_unlock.o):	              ptf_unlock.c
+$(LLIB)(sd_catcher.o):	              sd_catcher.c\
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(sd_clear.o):	                sd_clear.c\
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(sd_close.o):	                sd_close.c\
+   $(INC)/sd.h                    \
+   $(INC)/message.h               \
+   $(INC)/message_types.h         
+$(LLIB)(sd_cursor.o):	               sd_cursor.c\
+   $(INC)/sd.h                    
+$(LLIB)(sd_data.o):	                 sd_data.c\
+   $(INC)/iodefs.h                
+$(LLIB)(sd_early.o):	                sd_early.c\
+   $(INC)/iodefs.h                
+$(LLIB)(sd_input.o):	                sd_input.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(sd_keystroke.o):	            sd_keystroke.c\
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(sd_more.o):	                 sd_more.c\
+   $(INC)/iodefs.h                
+$(LLIB)(sd_msg.o):	                  sd_msg.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(sd_next.o):	                 sd_next.c\
+   $(INC)/sd.h                    
+$(LLIB)(sd_open.o):	                 sd_open.c\
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(sd_out.o):	                  sd_out.c\
+   $(INC)/sd.h                    
+$(LLIB)(sd_print.o):	                sd_print.c\
+   $(INC)/iodefs.h                
+$(LLIB)(sd_prompt.o):	               sd_prompt.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(sd_tab.o):	                  sd_tab.c\
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(sd_text.o):	                 sd_text.c\
+   $(INC)/iodefs.h                \
+   $(INC)/sd.h                    \
+   $(INC)/message_types.h         
+$(LLIB)(signal_catch.o):	            signal_catch.c
+$(LLIB)(sku_lookup.o):	              sku_lookup.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    
+$(LLIB)(space_fill.o):	              space_fill.c
+$(LLIB)(ss_close.o):	                ss_close.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    
+$(LLIB)(ss_lock.o):	                 ss_lock.c\
+   $(INC)/ss.h                    
+$(LLIB)(ss_open.o):	                 ss_open.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss_open.h               
+$(LLIB)(ss_unlock.o):	               ss_unlock.c\
+   $(INC)/ss.h                    
+$(LLIB)(stkloc_lookup.o):	           stkloc_lookup.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    
+$(LLIB)(strip_space.o):	             strip_space.c
+$(LLIB)(ta_data.o):	                 ta_data.c\
+   $(INC)/td.h                    
+$(LLIB)(tc_checksum.o):	             tc_checksum.c
+$(LLIB)(tc_close.o):	                tc_close.c
+$(LLIB)(tc_download.o):	             tc_download.c
+$(LLIB)(tc_read.o):	                 tc_read.c
+$(LLIB)(tc_readdress.o):	            tc_readdress.c
+$(LLIB)(tc_readout.o):	              tc_readout.c
+$(LLIB)(tc_write.o):	                tc_write.c
+$(LLIB)(td.o):	                      td.c\
+   $(INC)/td.h                    
+$(LLIB)(td_data.o):	                 td_data.c\
+   $(INC)/td.h                    
+$(LLIB)(td_driver.o):	               td_driver.c\
+   $(INC)/td.h                    
+$(LLIB)(td_help.o):	                 td_help.c\
+   $(INC)/td.h                    \
+   $(SRN)/help.t                  
+$(LLIB)(td_pr.o):	                   td_pr.c\
+   $(INC)/td.h                    
+$(LLIB)(time_convert.o):	            time_convert.c
+$(LLIB)(tmp_name.o):	                tmp_name.c
+$(LLIB)(xf_routines.o):	             xf_routines.c\
+   $(INC)/xf_structs.h            \
+   $(INC)/pxf_structs.h           \
+   $(INC)/xf_defs.h               \
+   $(INC)/iodefs.h                
+$(LLIB)(xt_build.o):	                xt_build.c\
+   $(INC)/ss.h                    \
+   $(INC)/xt.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/message.h               \
+   $(INC)/message_types.h         
+$(LLIB)(xt_close.o):	                xt_close.c\
+   $(INC)/Bard.h                  
+$(LLIB)(xt_open.o):	                 xt_open.c\
+   $(INC)/ss.h                    \
+   $(INC)/Bard.h                  
+
+#--------------------------------------------------------------------------#
+#  clean lib
+#
+cleanall:: cleanlib
+cleanlib:
+	@echo "Removing lib Library Units $(LIB:.c=.o)"
+	@-ar -d $(LLIB) $(LIB:.c=.o)
+
+#--------------------------------------------------------------------------#
+#  print lib
+#
+printall:: printlib
+printlib: lastprint
+lastprint:: $(LIB); @$(PRINT)
+
