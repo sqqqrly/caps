@@ -1,0 +1,252 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Log File Subroutines.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  11/06/95   |  tjt  Original implementation.
+ *  07/28/99   |  Informix to Oracle Conversion by Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char log_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct lg_item
+{
+   long  lg_ref;
+   long  lg_time;
+   char  lg_text[64];
+
+};
+
+struct lg_item lg_lo, lg_hi;
+long log_last = 0;
+
+long log_fd         = 0;
+long log_open_mode  = 0;
+long log_key        = 0;
+long log_count      = 0;
+long log_has_cursor = 0;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+ SQL_CURSOR lg_cursor1;                /* ref key                    */
+
+EXEC SQL END DECLARE SECTION;
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+log_open_o(mode)
+register long mode;
+{
+  log_fd   = 1;
+
+  log_open_mode  = mode;
+  log_key        = 0; 
+  log_count      = 0;
+  log_last       = 0;
+  log_has_cursor = 0;
+  log_setkey_o(1);
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+log_close_o()
+{
+  if (log_has_cursor) log_close_cursor();
+
+  log_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+log_close_cursor()
+{
+  if (log_has_cursor)
+  {
+    EXEC SQL CLOSE :lg_cursor1;
+    if (sqlca.sqlcode) icrash("log_close_cursor");
+  }
+  log_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+log_setkey_o(n)
+register long n;
+{
+  if (log_has_cursor) log_close_cursor();
+
+  log_key   = 1;   
+  log_count = 0;
+
+  lg_lo.lg_ref = 1;
+  lg_hi.lg_ref = 0x7fffffff;
+  
+  log_last  = 0;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+log_startkey_o(p)
+struct lg_item *p;
+{
+  if (log_has_cursor) log_close_cursor();
+
+  log_count = 0;
+  
+  memcpy(&lg_lo, p, sizeof(struct lg_item));
+  memcpy(&lg_hi, p, sizeof(struct lg_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+log_stopkey_o(p)
+struct lg_item *p;
+{
+  memcpy(&lg_hi, p, sizeof(struct lg_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+log_read_o(p, mode)
+register struct lg_item *p;
+register long mode;
+{
+  log_startkey_o(p);
+  log_stopkey_o(p);
+  return log_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Queue Time
+ *-------------------------------------------------------------------------*/
+log_next_o(p, mode)
+register struct lg_item *p;
+register long mode;
+{  
+  struct lg_item work;
+  long l_lg_ref;
+   
+  if (!log_count)
+  {
+   if (log_has_cursor) log_close_cursor();
+
+   EXEC SQL ALLOCATE :lg_cursor1;
+   l_lg_ref=p->lg_ref;
+
+   EXEC SQL EXECUTE
+   begin
+      log_retrieve.open_cur(:lg_cursor1,:l_lg_ref);
+   end;
+   END-EXEC;
+
+   if (sqlca.sqlcode) icrash("log_open_cursor");
+
+   log_has_cursor = 1;
+
+  }
+  log_last = 0;
+
+  EXEC SQL FETCH :lg_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    log_count += 1;
+
+    log_last   = work.lg_ref;
+    p->lg_ref  = work.lg_ref;
+    p->lg_time = work.lg_time; 
+    memcpy(p->lg_text,work.lg_text,64);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    log_close_cursor();
+    return 1;
+  }
+  icrash("log_next");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+log_write_o(p)
+struct lg_item *p;
+{
+  struct lg_item work;
+  work.lg_time = time(0);
+
+  EXEC SQL SELECT log_seq.nextval 
+           INTO   :work.lg_ref
+           FROM   dual;
+  memcpy(work.lg_text,p->lg_text,64);
+  work.lg_text[63]='\0';
+
+  EXEC SQL INSERT INTO maint_log (log_ref,log_time, log_text) 
+           VALUES (:work.lg_ref,:work.lg_time, :work.lg_text);
+
+  if (sqlca.sqlcode) icrash("log_write");
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+log_update_o(p)
+struct lg_item *p;
+{
+  struct lg_item work;
+  work.lg_time=p->lg_time;
+  memcpy(work.lg_text,p->lg_text,63);
+  work.lg_text[63]='\0';
+
+  if (log_last > 0)
+  {
+    EXEC SQL UPDATE maint_log 
+    SET log_time  = :work.lg_time, 
+        log_text  = :work.lg_text 
+    WHERE log_ref = :log_last;
+
+    log_last = 0;
+ 
+    if (sqlca.sqlcode) icrash("log_update");
+  }
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+log_delete_o()
+{
+  if (log_last > 0)
+  {
+    EXEC SQL DELETE FROM maint_log 
+             WHERE log_ref = :log_last;
+  
+    log_last = 0;
+    
+    if (sqlca.sqlcode) icrash("log_delete");
+  }
+  return 0;
+}
+
+/* end of log.ec  */
+
+

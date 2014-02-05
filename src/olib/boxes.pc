@@ -1,0 +1,588 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Boxes File Subroutines.
+ *
+ *  Note:           Normal cursor is used with readonly operations.
+ *                  Update cursor is used with autolock operations.
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/05/95   |  tjt  Original implementation.
+ *  07/15/99   |  Informix to Oracle Conversion - Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+
+#define SQLNOTFOUND 1403
+
+EXEC SQL INCLUDE SQLCA;
+
+static char boxes_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+
+struct bx_item
+{
+   short box_pl;
+   long  box_on;
+   long  box_number;
+   char  box_status[1];
+   char  box_last[1];
+   short box_lines;
+   short box_units;
+};
+struct bx_item2
+{
+   short box_pl;
+   long  box_on;
+   long  box_number;
+   char  box_status[2];
+   char  box_last[2];
+   short box_lines;
+   short box_units;
+};
+struct bx_item bx_lo, bx_hi;
+
+long boxes_fd         = 0;
+long boxes_open_mode  = 0;
+long boxes_key        = 0;
+long boxes_count      = 0;
+long boxes_last       = 0;
+long boxes_has_cursor = -1;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+  SQL_CURSOR boxes_cursor0;     /* no key update                  */
+  SQL_CURSOR boxes_cursor1;     /* pl + on + status key update    */
+  SQL_CURSOR boxes_cursor2;     /* pl + on + box key update       */
+  SQL_CURSOR boxes_cursor3;     /* box key update                 */
+
+  long one_box_num = 0;
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+boxes_open_o(mode)
+register long mode;
+{
+  boxes_fd = 1;
+
+  boxes_open_mode  = mode;
+  boxes_key        = 0;
+  boxes_count      = 0;
+  boxes_last       = 0;
+  boxes_has_cursor = -1;
+  boxes_setkey_o(0);
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+boxes_close_o()
+{
+  if (boxes_has_cursor >= 0) boxes_close_cursor();
+
+  boxes_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+boxes_close_cursor()
+{
+  if (boxes_has_cursor >= 0)
+  {
+    switch (boxes_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE :boxes_cursor0;
+              if (sqlca.sqlcode) icrash("boxes_close_cursor 0");
+              break;
+      case 1:
+              EXEC SQL CLOSE :boxes_cursor1;
+              if (sqlca.sqlcode) icrash("boxes_close_cursor 1");
+              break;
+      case 2:
+              EXEC SQL CLOSE :boxes_cursor2;
+              if (sqlca.sqlcode) icrash("boxes_close_cursor 2");
+              break;
+      case 3:
+              EXEC SQL CLOSE :boxes_cursor3;
+              if (sqlca.sqlcode) icrash("boxes_close_cursor 3");
+              break;
+    }
+  }
+  boxes_has_cursor = -1;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+boxes_setkey_o(n)
+register long n;
+{
+  if (boxes_has_cursor >= 0) boxes_close_cursor();
+
+  boxes_key   = n < 0 || n > 3 ? 0 : n;   
+  boxes_count = 0;
+  boxes_last  = 0;
+  
+  bx_lo.box_pl        = 1;
+  bx_lo.box_on        = 0;
+  bx_lo.box_status[0] = 0x20;
+  bx_lo.box_number    = 0;
+
+  bx_hi.box_pl        = 0x7fff;
+  bx_hi.box_on        = 0x7fffffff;
+  bx_hi.box_status[0] = 0x7f;
+  bx_hi.box_number    = 0x7fffffff;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+---------------------------------------------------------------------------*/
+boxes_startkey_o(p)
+struct bx_item *p;
+{
+  if (boxes_has_cursor >= 0) boxes_close_cursor();
+
+  if (boxes_key > 3) boxes_key -= 4;
+  
+  boxes_count = 0;
+  boxes_last  = 0;
+  
+  memcpy(&bx_lo, p, sizeof(struct bx_item));
+  memcpy(&bx_hi, p, sizeof(struct bx_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+boxes_stopkey_o(p)
+struct bx_item *p;
+{
+  memcpy(&bx_hi, p, sizeof(struct bx_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+boxes_read_o(p, mode)
+register struct bx_item *p;
+register long mode;
+{
+  boxes_startkey_o(p);
+  boxes_stopkey_o(p);
+  return boxes_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *-------------------------------------------------------------------------*/
+boxes_next_o(p, mode)
+register struct bx_item *p;
+register long mode;
+{  
+  switch (boxes_key)
+  {
+    case 0:  return boxes_next0(p);
+    case 1:  return boxes_next1(p);
+    case 2:  return boxes_next2(p);
+    case 3:  return boxes_next3(p);
+  }
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key
+ *-------------------------------------------------------------------------*/
+boxes_next0(p)
+register struct bx_item *p;
+{  
+  struct bx_item2 work2;
+  if (!boxes_count)
+  {
+    if (boxes_has_cursor >= 0) boxes_close_cursor();
+
+    EXEC SQL ALLOCATE :boxes_cursor0;
+
+
+    EXEC SQL EXECUTE
+    begin
+
+         box_retrieve.open_cur0(:boxes_cursor0);
+
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("boxes_open_cursor 0");
+
+    boxes_has_cursor = boxes_key;
+  }
+  boxes_last = 0;
+  
+  EXEC SQL FETCH  :boxes_cursor0 INTO :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    boxes_count += 1;
+    boxes_last = 1;
+    boxes_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("boxes_next 0");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline, Order, and Status
+ *-------------------------------------------------------------------------*/
+boxes_next1(p)
+register struct bx_item *p;
+{  
+  int l_box_pl,l_box_on;
+  char l_box_status;
+  struct bx_item2 work2;
+  
+  if (!boxes_count)
+  {
+    if (boxes_has_cursor >= 0) boxes_close_cursor();
+
+    EXEC SQL ALLOCATE :boxes_cursor1;
+
+    l_box_pl=p->box_pl;
+    l_box_on=p->box_on;
+    l_box_status=p->box_status[0];
+
+
+    EXEC SQL EXECUTE
+    begin
+         box_retrieve.open_cur1(:boxes_cursor1,:l_box_pl,
+                                :l_box_on,:l_box_status);
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("boxes_open_cursor 1");
+    
+    /*boxes_open_cursor(); */
+    boxes_has_cursor = boxes_key;
+  }
+  boxes_last = 0;
+  
+  EXEC SQL FETCH  :boxes_cursor1 INTO :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    boxes_count += 1;
+    boxes_last = 1;
+    boxes_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("boxes_next 1");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline, Order, and Box Number
+ *-------------------------------------------------------------------------*/
+boxes_next2(p)
+register struct bx_item *p;
+{  
+  struct bx_item2 work2;
+  int l_box_pl,l_box_on;
+  int l_box_number_hi,l_box_number_lo;
+  
+  if (!boxes_count)
+  {
+    if (boxes_has_cursor >= 0) boxes_close_cursor();
+
+    EXEC SQL ALLOCATE :boxes_cursor2;
+
+    l_box_pl    = p->box_pl;
+    l_box_on    = p->box_on;
+    l_box_number_lo= bx_lo.box_number;
+    l_box_number_hi= bx_hi.box_number;
+
+
+    EXEC SQL EXECUTE
+    begin
+         box_retrieve.open_cur2(:boxes_cursor2,:l_box_pl,
+                :l_box_on,:l_box_number_lo,:l_box_number_hi);
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("boxes_open_cursor 2");
+    
+    boxes_has_cursor = boxes_key;
+
+  }
+  boxes_last = 0;
+  
+  EXEC SQL FETCH :boxes_cursor2 INTO :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    boxes_count += 1;
+    boxes_last   = 1;
+    boxes_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("boxes_next 2");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Box Number 
+ *-------------------------------------------------------------------------*/
+boxes_next3(p)
+register struct bx_item *p;
+{  
+  struct bx_item2 work2;
+  int l_box_number; 
+  
+  if (!boxes_count)
+  {
+    if (boxes_has_cursor >= 0) boxes_close_cursor();
+
+    EXEC SQL ALLOCATE :boxes_cursor3;
+
+    l_box_number= p->box_number;
+
+    EXEC SQL EXECUTE
+    begin
+
+         box_retrieve.open_cur3(:boxes_cursor3,:l_box_number);
+
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("boxes_open_cursor 3");
+    
+    /*boxes_open_cursor(); */
+
+    boxes_has_cursor = boxes_key;
+
+  }
+  boxes_last = 0;
+  
+  EXEC SQL FETCH :boxes_cursor3 INTO :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    boxes_count += 1;
+    boxes_last   = 1;
+    boxes_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("boxes_next 3");
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field
+ *-------------------------------------------------------------------------*/
+boxes_copy(p, q)
+register struct bx_item  *p;
+register struct bx_item2 *q;
+{
+  p->box_pl     = q->box_pl;
+  p->box_on     = q->box_on;
+  p->box_number = q->box_number;
+  p->box_lines  = q->box_lines;
+  p->box_units  = q->box_units;
+
+  memcpy(p->box_status, q->box_status, 1);
+  memcpy(p->box_last,   q->box_last,   1);
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field used of insertion and update
+ *-------------------------------------------------------------------------*/
+boxes_copy_reverse(p, q)
+register struct bx_item  *p;
+register struct bx_item2 *q;
+{
+  strcpy(q->box_status," ");
+  strcpy(q->box_last," ");
+
+  q->box_pl     = p->box_pl;
+  q->box_on     = p->box_on;
+  q->box_number = p->box_number;
+  q->box_lines  = p->box_lines;
+  q->box_units  = p->box_units;
+
+  q->box_status[0]=p->box_status[0];
+  q->box_last[0]=p->box_last[0];
+ 
+  q->box_status[1]='\0'; 
+  q->box_last[1]  ='\0'; 
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+boxes_write_o(p)
+register struct bx_item *p;
+{
+  struct bx_item2 new;
+
+  boxes_copy_reverse(p,&new); 
+
+  EXEC SQL INSERT INTO boxes 
+  (box_pl  ,box_on   ,box_number,  box_status,
+   box_last,box_lines,box_units )
+  VALUES
+  (:new.box_pl  ,:new.box_on   ,:new.box_number,:new.box_status,
+   :new.box_last,:new.box_lines,:new.box_units);
+
+  if (sqlca.sqlcode) icrash("boxes_write");
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+boxes_update_o(p)
+register struct bx_item *p;
+{
+  struct bx_item2 new;
+
+  if (boxes_last > 0)
+  {
+    boxes_copy_reverse(p,&new); 
+    boxes_last = 0;
+    EXEC SQL UPDATE boxes
+    SET          box_pl      = :new.box_pl,
+                 box_on      = :new.box_on,
+                 box_number  = :new.box_number,
+                 box_status  = :new.box_status,
+                 box_last    = :new.box_last,
+                 box_lines   = :new.box_lines,
+                 box_units   = :new.box_units
+
+    WHERE        box_pl     =  :new.box_pl
+    AND          box_on     =  :new.box_on
+    AND          box_number =  :new.box_number;
+    return 0;
+  }
+  krash("boxes_update", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+boxes_delete_o(p)
+struct bx_item *p;
+{
+  int l_box_pl, l_box_on, l_box_number; 
+
+  if (boxes_last > 0)
+  {
+    boxes_last = 0;
+    l_box_pl     = p->box_pl;
+    l_box_on     = p->box_on;
+    l_box_number = p->box_number;
+
+    EXEC SQL DELETE FROM boxes
+    WHERE        box_pl     =  :l_box_pl
+    AND          box_on     =  :l_box_on
+    AND          box_number =  :l_box_number;
+    return 0;
+  }
+  krash("boxes_delete", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Query Database Row For Specific Box Number
+ *-------------------------------------------------------------------------*/
+boxes_query(p, box_num)
+register struct bx_item2 *p;
+register long box_num;
+{
+struct bx_item2 work;
+
+one_box_num = box_num;
+
+EXEC SQL select * into :work
+  from boxes
+  where box_number = :one_box_num;
+
+  if (sqlca.sqlcode == 0)
+     {
+        memcpy(p, &work, sizeof(struct bx_item2));
+        return 0;
+     }
+  else if (sqlca.sqlcode == SQLNOTFOUND)
+     {
+        return 1;
+     }
+  icrash("boxes_query");
+  return 0;
+}
+
+/*-------------------------------------------------------------------------*
+ *  Query Database Row For Specific Box Number based on Box Status
+ *-------------------------------------------------------------------------*/
+boxes_query1(p)
+register struct bx_item2 *p;
+{
+struct bx_item2 work;
+struct bx_item2 work1;
+
+  memcpy(&work1, p, sizeof(struct bx_item2));
+  work.box_status[1] = '\0';
+
+EXEC SQL select * into :work
+  from boxes 
+  where box_pl     = :work1.box_pl
+  and   box_on     = :work1.box_on
+  and   box_status = :work1.box_status;
+
+  if (sqlca.sqlcode == 0)
+     {
+        memcpy(p, &work, sizeof(struct bx_item2));
+        return 0;
+     }
+  else if (sqlca.sqlcode == SQLNOTFOUND)
+     {
+        return 1;
+     }
+  icrash("boxes_query1");
+  return 0;
+}
+
+
+/*-------------------------------------------------------------------------*
+ *  Update Database Based On Box Number 
+ *-------------------------------------------------------------------------*/
+boxes_update1(p)
+register struct bx_item2 *p;
+{
+struct bx_item2 work;
+
+  memcpy(&work, p, sizeof(struct bx_item2));
+  work.box_status[1] = '\0';
+  work.box_last[1]   = '\0';
+
+    EXEC SQL UPDATE boxes
+    SET          box_pl      = :work.box_pl,
+                 box_on      = :work.box_on,
+                 box_number  = :work.box_number,
+                 box_status  = :work.box_status,
+                 box_last    = :work.box_last,
+                 box_lines   = :work.box_lines,
+                 box_units   = :work.box_units
+	where box_number = :work.box_number;
+
+  if (sqlca.sqlcode)
+     {
+        icrash("boxes_update1");
+        return 1;
+     }
+  else
+     {
+        return 0;
+     }
+}
+/* end of boxes.ec  */

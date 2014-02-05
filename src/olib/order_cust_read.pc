@@ -1,0 +1,444 @@
+#define SQLNOTFOUND 1403
+
+EXEC SQL INCLUDE SQLCA;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+    SQL_CURSOR ordercust_cursor0;
+    SQL_CURSOR ordercust_cursor1;
+    SQL_CURSOR ordercust_cursor2;
+
+EXEC SQL END DECLARE SECTION;
+
+
+struct ordercust
+{
+	long cust_order_nbr;
+	long line_no;
+	long caps_order_no;
+        long pickline_no;
+	char store_no[5];
+        char dc_code[3];
+        char ord_constant[4];
+	char group_code[3];
+	char planned_pick_date[11];
+        long start_box;
+        long end_box;
+        short order_status;
+        short xmit_status;
+};
+
+struct ordercust2
+{
+	long cust_order_nbr;
+	long line_no;
+	long caps_order_no;
+        long pickline_no;
+	char store_no[6];
+        char dc_code[4];
+        char ord_constant[5];
+	char group_code[4];
+	char planned_pick_date[12];
+        long start_box;
+        long end_box;
+        short order_status;
+        short xmit_status;
+};
+
+struct ordercust ordercust_lo, ordercust_hi;
+
+long order_fd         = 0;
+long order_open_mode  = 0;
+long order_key        = 0;
+long order_count      = 0;
+long order_last       = 0;
+long order_has_cursor = -1;
+
+/*---------------------------------------------------------------------*
+ *  Open Database
+ *--------------------------------------------------------------------*/
+ordercust_open_o(mode)
+register long mode;
+{
+  order_fd = 1;
+
+  order_open_mode  = mode;
+  order_key        = 0;
+  order_count      = 0;
+  order_last       = 0;
+  order_has_cursor = -1;
+  ordercust_setkey_o(0);
+  return 1;
+}
+/*---------------------------------------------------------------------*
+ *  Close Database
+ *--------------------------------------------------------------------*/
+ordercust_close_o()
+{
+  if (order_has_cursor >= 0) ordercust_close_cursor();
+  order_fd = 0;
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Set Database Access Key
+ *--------------------------------------------------------------------*/
+ordercust_setkey_o(n)
+register long n;
+{
+  if (order_has_cursor >= 0) ordercust_close_cursor(); 
+  order_key   = n < 0 || n > 2 ? 0 : n;   
+  order_count = 0;
+  order_last  = 0;
+  
+  ordercust_lo.cust_order_nbr = 1;
+
+  ordercust_hi.cust_order_nbr = 0x7fffffff;
+  
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *--------------------------------------------------------------------*/
+ordercust_startkey_o(p)
+struct ordercust *p;
+{
+  if (order_has_cursor >= 0) ordercust_close_cursor(); 
+
+  if (order_key > 2) order_key -= 3;
+  
+  order_count = 0;
+  order_last  = 0;
+  
+  memcpy(&ordercust_lo, p, sizeof(struct ordercust));
+  memcpy(&ordercust_hi, p, sizeof(struct ordercust));
+
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *--------------------------------------------------------------------*/
+ordercust_stopkey_o(p)
+struct ordercust *p;
+{
+  memcpy(&ordercust_hi, p, sizeof(struct ordercust));
+
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Read Database Row
+ *--------------------------------------------------------------------*/
+ordercust_read_o(p, mode)
+struct ordercust *p;
+{
+  long ret;
+  
+  ordercust_startkey_o(p);
+  ordercust_stopkey_o(p);
+  ret = ordercust_next_o(p, mode);
+  if (!(order_open_mode & mode)) ordercust_close_cursor(); 
+  return ret;
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *--------------------------------------------------------------------*/
+ordercust_next_o(p, mode)
+register struct ordecust  *p;
+register long mode;
+{  
+  switch (order_key)
+  {
+    case 0:  return ordercust_next0(p);
+    case 1:  return ordercust_next1(p);
+    case 2:  return ordercust_next2(p);
+  }
+  return 1;
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key 
+ *--------------------------------------------------------------------*/
+ordercust_next0(p)
+register struct order_cust *p;
+{  
+  struct ordercust2 new;
+  
+  if (!order_count)
+  {
+    if (order_has_cursor >= 0) ordercust_close_cursor(); 
+
+    EXEC SQL ALLOCATE :ordercust_cursor0;
+
+    EXEC SQL EXECUTE 
+         begin
+            ordercust_retrieve.open_cur0(:ordercust_cursor0);
+         end;       
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("ordercust_next0 open");
+    order_has_cursor = order_key;
+   }
+    order_last = 0;
+
+    EXEC SQL FETCH  :ordercust_cursor0
+             INTO   :new;
+
+   if (sqlca.sqlcode == 0)
+   {
+      order_count += 1;
+      order_last   = 1;
+      ordercust_copy(p, &new);
+      return 0;
+   }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    ordercust_close_cursor();
+    return 1;
+  }
+  icrash("ordercust_next0 fetch");
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Order Number 
+ *--------------------------------------------------------------------*/
+ordercust_next1(p)
+register struct ordercust *p;
+{  
+  struct ordercust2 new;
+  long l_cust_order_nbr;
+  if (!order_count)
+  {
+    if (order_has_cursor >= 0) ordercust_close_cursor(); 
+
+    EXEC SQL ALLOCATE :ordercust_cursor1;
+
+    l_cust_order_nbr=p->cust_order_nbr;
+    EXEC SQL EXECUTE 
+         begin
+            ordercust_retrieve.open_cur1(:ordercust_cursor1,
+                                    :l_cust_order_nbr);
+         end;       
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("ordercust_next1open");
+    order_has_cursor = order_key;
+  }
+  order_last = 0;
+
+  EXEC SQL FETCH  :ordercust_cursor1
+             INTO   :new;
+
+  if (sqlca.sqlcode == 0)
+  {
+    order_count += 1;
+    order_last   = 1;
+    ordercust_copy(p, &new);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    ordercust_close_cursor();
+    return 1;
+  }
+  icrash("ordercust_next1fetch");
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Customer Order Number  
+ *  
+ *--------------------------------------------------------------------*/
+/*
+ordercust_next2(p)
+register struct ordercust *p;
+{  
+ struct ordercust2 new;
+ long l_order_status;
+ long  l_xmit_status;
+
+ 
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long  lLineNo;
+                 long  lCapsOrderNo;
+                 long  lPickLineNo;
+                 char  szStoreNo[5];
+                 char  szDcCode[4];
+                 char  szOrderConstant[5];
+                 char  szGroupCode[4];
+                 char  szPlannedPickDate[11];
+                 long  lStartBox;
+                 long  lEndBox;
+                 short nOrderStatus;
+                 short nXmitStatus;
+                 long  lCustOrderNbr;
+	EXEC SQL END DECLARE SECTION;
+
+  if (!order_count)
+  {
+    if (order_has_cursor >= 0) ordercust_close_cursor(); 
+
+    EXEC SQL ALLOCATE :ordercust_cursor2;
+
+    l_order_status=p->order_status;
+    l_xmit_status=p->xmit_status;
+
+    EXEC SQL EXECUTE 
+         begin
+            ordercust_retrieve.open_cur2(:ordercust_cursor2,
+                                    :l_order_status,
+                                    :l_xmit_status);
+         end;       
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("ordercust_next2 open");
+    order_has_cursor = order_key;
+  }
+  order_last = 0;
+        lCapsOrderNo  = 0;
+        lPickLineNo   = 0;
+        memset(szStoreNo, 0, sizeof(szStoreNo));
+        memset(szDcCode, 0, sizeof(szDcCode));
+        memset(szOrderConstant, 0, sizeof(szOrderConstant));
+        memset(szGroupCode, 0, sizeof(szGroupCode));
+        memset(szPlannedPickDate, 0, sizeof(szPlannedPickDate));
+        lStartBox     = 0;
+        lEndBox       = 0;
+        nOrderStatus  = 0;
+        nXmitStatus   = 0;
+	lCustOrderNbr = 0;
+
+        EXEC SQL FETCH NEXT :ordercust_cursor2 INTO
+                                         :lLineNo,
+                                         :lCapsOrderNo,
+                                         :lPickLineNo,
+                                         :szStoreNo,
+                                         :szDcCode,
+                                         :szOrderConstant,
+                                         :szGroupCode,
+                                         :szPlannedPickDate,
+                                         :lStartBox,
+                                         :lEndBox,
+                                         :nOrderStatus,
+                                         :nXmitStatus,
+                                         :lCustOrderNbr;
+
+  if (sqlca.sqlcode == 0)
+  {
+    order_count += 1;
+    order_last   = 1;
+             StrClip(szStoreNo);
+             StrClip(szDcCode);
+             StrClip(szOrderConstant);
+             StrClip(szGroupCode);
+             StrClip(szPlannedPickDate);
+
+             order_cust->caps_order_no  = lCapsOrderNo;
+             order_cust->pickline_no    = lPickLineNo;
+             strcpy(order_cust->store_no, szStoreNo);
+             strcpy(order_cust->dc_code, szDcCode);
+             strcpy(order_cust->ord_constant, szOrderConstant);
+             strcpy(order_cust->group_code, szGroupCode);
+             strcpy(order_cust->planned_pick_date, "");
+             strcpy(order_cust->planned_pick_date, szPlannedPickDate);
+             order_cust->start_box      = lStartBox;
+             order_cust->end_box        = lEndBox;
+             order_cust->order_status   = nOrderStatus;
+             order_cust->xmit_status    = nXmitStatus;
+             order_cust->cust_order_nbr = lCustOrderNbr;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    ordercust_close_cursor();
+    return 1;
+  }
+  icrash("ordercust_next2 fetch");
+}
+*/
+
+ordercust_next2(p)
+register struct ordercust *p;
+{  
+ struct ordercust2 new;
+ long l_order_status;
+ long  l_xmit_status;
+
+ 
+  if (!order_count)
+  {
+    if (order_has_cursor >= 0) ordercust_close_cursor(); 
+
+    EXEC SQL ALLOCATE :ordercust_cursor2;
+
+    l_order_status=p->order_status;
+    l_xmit_status=p->xmit_status;
+
+    EXEC SQL EXECUTE 
+         begin
+            ordercust_retrieve.open_cur2(:ordercust_cursor2,
+                                    :l_order_status,
+                                    :l_xmit_status);
+         end;       
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("ordercust_next2 open");
+    order_has_cursor = order_key;
+  }
+  order_last = 0;
+
+  EXEC SQL FETCH  :ordercust_cursor2 INTO :new;
+
+  if (sqlca.sqlcode == 0)
+  {
+    order_count += 1;
+    order_last   = 1;
+    ordercust_copy(p, &new);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    ordercust_close_cursor();
+    return 1;
+  }
+  icrash("ordercust_next2 fetch");
+}
+/*---------------------------------------------------------------------*
+ *  Copy Field by Field
+ *--------------------------------------------------------------------*/
+ordercust_copy(p, q)
+register struct ordercust  *p;
+register struct ordercust2 *q;
+{
+  p->line_no       = q->line_no;
+  p->caps_order_no       = q->caps_order_no;
+  p->pickline_no = q->pickline_no;
+  p->start_box = q->start_box;
+  p->end_box = q->end_box;
+  p->order_status  = q->order_status;
+  p->xmit_status   = q->xmit_status;
+  p->cust_order_nbr   = q->cust_order_nbr;
+      
+  memcpy(p->store_no,    q->store_no,    5);
+  memcpy(p->dc_code, q->dc_code, 4);
+  memcpy(p->ord_constant, q->ord_constant, 5);
+  memcpy(p->group_code,    q->group_code,    4);
+  memcpy(p->planned_pick_date,    q->planned_pick_date,   11);
+    
+  return 0;
+}
+
+ordercust_close_cursor()
+{
+  if (order_has_cursor >= 0)
+  {
+    switch (order_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE :ordercust_cursor0;
+              break;
+      case 1:
+              EXEC SQL CLOSE :ordercust_cursor1;
+              break;
+      case 2:
+              EXEC SQL CLOSE :ordercust_cursor2;
+              break;
+    }
+  }
+  order_last = 0;
+  order_has_cursor = -1;
+  return 0;
+}

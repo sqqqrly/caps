@@ -1,0 +1,465 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Pending File Subroutines.
+ *
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/07/95   |  tjt  Original implementation.
+ *  07/19/99   |  Informix to Oracle Conversion By Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char pending_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct pd_item
+{
+   short pd_pl;
+   long  pd_on;
+   char  pd_group[6];
+   char  pd_con[15];
+   short pd_flags;
+};
+
+struct pd_item2
+{
+   short pd_pl;
+   long  pd_on;
+   char  pd_group[7];
+   char  pd_con[16];
+   short pd_flags;
+};
+
+struct pd_item pd_lo, pd_hi;
+
+long pending_fd         = 0;
+long pending_open_mode  = 0;
+long pending_key        = 0;
+long pending_count      = 0;
+long pending_last       = 0;
+long pending_has_cursor = -1;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+ SQL_CURSOR pending_cursor0;               /* no key                       */
+ SQL_CURSOR pending_cursor1;               /* pl + on key                  */ 
+ SQL_CURSOR pending_cursor2;               /* pl + group key               */
+ SQL_CURSOR pending_cursor3;               /* pl + con key                 */
+
+EXEC SQL END DECLARE SECTION;
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+pending_open_o(mode)
+register long mode;
+{
+  pending_fd         = 1;
+  pending_open_mode  = mode;
+  pending_key        = 0;
+  pending_count      = 0;
+  pending_last       = 0;
+  pending_has_cursor = -1;
+  pending_setkey_o(0);
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+pending_close_o()
+{
+  if (pending_has_cursor >= 0) pending_close_cursor();
+
+  pending_has_cursor = -1;
+  pending_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+pending_close_cursor()
+{
+  if (pending_has_cursor >= 0)
+  {
+    switch (pending_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE  :pending_cursor0;
+              if (sqlca.sqlcode) icrash("pending_close_cursor 0");
+              break;
+      case 1:
+              EXEC SQL CLOSE  :pending_cursor1;
+              if (sqlca.sqlcode) icrash("pending_close_cursor 1");
+              break;
+      case 2:
+              EXEC SQL CLOSE :pending_cursor2;
+              if (sqlca.sqlcode) icrash("pending_close_cursor 2");
+              break;
+      case 3:
+              EXEC SQL CLOSE  :pending_cursor3;
+              if (sqlca.sqlcode) icrash("pending_close_cursor 3");
+              break;
+    }
+  }
+  pending_has_cursor = -1;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+pending_setkey_o(n)
+register long n;
+{
+  if (pending_has_cursor >= 0) pending_close_cursor();
+
+  pending_key   = n < 0 || n > 3 ? 0 : n;   
+  pending_count = 0;
+
+  pd_lo.pd_pl   = 1;
+  pd_lo.pd_on   = 0;
+  
+  pd_hi.pd_pl   = 0x7fff;
+  pd_hi.pd_on   = 0x7fffffff;
+  
+  memset(pd_lo.pd_group, 0x20, 6);
+  memset(pd_hi.pd_group, 0x7f, 6);
+  
+  memset(pd_lo.pd_con, 0x20, 15);
+  memset(pd_hi.pd_con, 0x7f, 15);
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+pending_startkey_o(p)
+struct pd_item *p;
+{
+  if (pending_has_cursor >= 0) pending_close_cursor();
+
+  pending_count = 0;
+  
+  memcpy(&pd_lo, p, sizeof(struct pd_item));
+  memcpy(&pd_hi, p, sizeof(struct pd_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+pending_stopkey_o(p)
+struct pd_item *p;
+{
+  memcpy(&pd_hi, p, sizeof(struct pd_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+pending_read_o(p, mode)
+register struct pd_item *p;
+register long mode;
+{
+  pending_startkey_o(p);
+  pending_stopkey_o(p);
+  return pending_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *-------------------------------------------------------------------------*/
+pending_next_o(p, mode)
+register struct pd_item *p;
+register long mode;
+{  
+  switch (pending_key)
+  {
+    case 0:  return pending_next0(p);
+    case 1:  return pending_next1(p);
+    case 2:  return pending_next2(p);
+    case 3:  return pending_next3(p);
+  }
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key
+ *-------------------------------------------------------------------------*/
+pending_next0(p)
+register struct pd_item *p;
+{  
+  struct pd_item2 work2;
+  
+  if (!pending_count)
+  {
+    if (pending_has_cursor >= 0) pending_close_cursor();
+
+    EXEC SQL ALLOCATE :pending_cursor0;
+
+    EXEC SQL EXECUTE
+    begin
+       pending_retrieve.open_cur0(:pending_cursor0);
+    end;
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("pending_open_cursor 0");
+
+    pending_has_cursor = pending_key;
+
+  }
+  pending_last = 0;
+  
+  EXEC SQL FETCH  :pending_cursor0 INTO :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    pending_count += 1;
+    pending_last   = 1;
+    pending_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("pending_next0 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Order Number
+ *-------------------------------------------------------------------------*/
+pending_next1(p)
+register struct pd_item *p;
+{  
+  struct pd_item2 work2;
+  int l_pd_pl;
+  int l_pd_lo,l_pd_hi;
+  l_pd_pl=p->pd_pl;
+  l_pd_lo=pd_lo.pd_on;
+  l_pd_hi=pd_hi.pd_on;
+  
+  if (!pending_count)
+  {
+    if (pending_has_cursor >= 0) pending_close_cursor();
+
+    EXEC SQL ALLOCATE :pending_cursor1;
+
+    EXEC SQL EXECUTE
+    begin
+       pending_retrieve.open_cur1(:pending_cursor1,:l_pd_pl,
+                                  :l_pd_lo,:l_pd_hi);
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("pending_open_cursor 1");
+
+    pending_has_cursor = pending_key;
+
+  }
+  pending_last = 0;
+  
+  EXEC SQL FETCH :pending_cursor1 INTO :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    pending_count += 1;
+    pending_last   = 1;
+    pending_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("pending_next1 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Group
+ *-------------------------------------------------------------------------*/
+pending_next2(p)
+register struct pd_item *p;
+{  
+  struct pd_item2 work2;
+  int l_pd_pl;
+  char l_pd_lo[7],l_pd_hi[7];
+  l_pd_pl=p->pd_pl;
+  memcpy(l_pd_lo,pd_lo.pd_group,5);
+  memcpy(l_pd_hi,pd_hi.pd_group,5);
+  l_pd_lo[6]='\0';
+  l_pd_hi[6]='\0';
+
+  if (!pending_count)
+  {
+    if (pending_has_cursor >= 0) pending_close_cursor();
+
+    EXEC SQL ALLOCATE :pending_cursor2;
+
+    EXEC SQL EXECUTE
+    begin
+       pending_retrieve.open_cur2(:pending_cursor2,:l_pd_pl,
+                                  :l_pd_lo,:l_pd_hi);
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("pending_open_cursor 2");
+
+    pending_has_cursor = pending_key;
+
+  }
+  pending_last = 0;
+  
+  EXEC SQL FETCH  :pending_cursor2 INTO :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    pending_count += 1;
+    pending_last   = 1;
+    pending_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("pending_next2 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Customer Order Number
+ *-------------------------------------------------------------------------*/
+pending_next3(p)
+register struct pd_item *p;
+{  
+  struct pd_item2 work2;
+  int  l_pd_pl;
+  char l_pd_con[16];
+  l_pd_pl=p->pd_pl;
+  memcpy(l_pd_con,p->pd_con,15);
+  l_pd_con[15]='\0';
+  
+  if (!pending_count)
+  {
+    if (pending_has_cursor >= 0) pending_close_cursor();
+
+    EXEC SQL ALLOCATE :pending_cursor3;
+
+    EXEC SQL EXECUTE
+    begin
+       pending_retrieve.open_cur3(:pending_cursor3,:l_pd_pl,:l_pd_con);
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("pending_open_cursor 3");
+
+    pending_has_cursor = pending_key;
+
+  }
+  pending_last = 0;
+  
+  EXEC SQL FETCH  :pending_cursor3 INTO :work2; 
+  
+  if (sqlca.sqlcode == 0)
+  {
+    pending_count += 1;
+    pending_last   = 1;
+    pending_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("pending_next3 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field
+ *-------------------------------------------------------------------------*/
+pending_copy(p, q)
+register struct pd_item  *p;
+register struct pd_item2 *q;
+{
+  p->pd_pl    = q->pd_pl;
+  p->pd_on    = q->pd_on;
+  p->pd_flags = q->pd_flags;
+
+  memcpy(p->pd_group, q->pd_group, 6);
+  memcpy(p->pd_con,   q->pd_con,  15);
+
+  return 0;
+}
+
+pending_copy_reverse(p, q)
+struct pd_item  *p;
+struct pd_item2 *q;
+{
+  q->pd_pl    = p->pd_pl;
+  q->pd_on    = p->pd_on;
+  q->pd_flags = p->pd_flags;
+
+  memcpy(q->pd_group, p->pd_group, 6);
+  memcpy(q->pd_con,   p->pd_con,  15);
+  q->pd_group[6]='\0';
+  q->pd_con[15]='\0';
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+pending_write_o(p)
+register struct pd_item *p;
+{
+
+ struct pd_item2 work;
+ pending_copy_reverse(p,&work); 
+
+ EXEC SQL INSERT INTO  pending 
+          (pnd_pl ,pnd_on     ,pnd_group,
+           pnd_con,pnd_flags)
+ values   (:work.pd_pl  ,:work.pd_on    ,:work.pd_group,
+           :work.pd_con, :work.pd_flags); 
+
+  if (sqlca.sqlcode) icrash("pending_write");
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+pending_update_o(p)
+register struct pd_item *p;
+{
+  struct pd_item2  work;
+
+  if (pending_last > 0)
+  {
+    pending_copy_reverse(p,&work); 
+    pending_last = 0;
+    EXEC SQL UPDATE pending
+       SET    pnd_pl    = :work.pd_pl,
+              pnd_on    = :work.pd_on,
+              pnd_group = :work.pd_group,
+              pnd_con   = :work.pd_con
+       WHERE  pnd_pl    = :work.pd_pl
+       AND    pnd_on    = :work.pd_on;
+
+    if (sqlca.sqlcode) icrash("pending_update");
+    return 0;
+  }
+  krash("pending_update", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+pending_delete_o(p)
+register struct pd_item *p;
+{
+  struct pd_item2 work;
+  if (pending_last > 0)
+  {
+    pending_last = 0;
+    pending_copy_reverse(p,&work); 
+
+    EXEC SQL DELETE FROM pending
+    WHERE  pnd_pl    = :work.pd_pl
+    AND    pnd_on    = :work.pd_on;
+
+    if (sqlca.sqlcode) icrash("pending_delete");
+    return 0;
+  }
+  krash("pending_delete", "no active record", 1);
+}
+/* end of pending.ec  */

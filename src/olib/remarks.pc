@@ -1,0 +1,268 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Remarks File Subroutines.
+ *
+ *  Note:           Uses only one key and an update cursor.
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   |  tjt  Original implementation.
+ *  07/16/99   |  Informix to Oracle Conversion by Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char remarks_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct rks_item
+{
+   short rks_pl;
+   long  rks_on;
+   char  rks_text[8];
+};
+struct rks_item2
+{
+   short rks_pl;
+   long  rks_on;
+   char  rks_text[9];
+};
+struct rks_item rks_lo, rks_hi;
+
+long remarks_fd         = 0;
+long remarks_open_mode  = 0;
+long remarks_key        = 0;
+long remarks_count      = 0;
+long remarks_last       = 0;
+long remarks_has_cursor = 0;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+SQL_CURSOR remarks_cursor1;       /* pl + on key                    */
+ 
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+remarks_open_o(mode)
+register long mode;
+{
+  remarks_fd = 1;
+
+  remarks_open_mode  = mode;
+  remarks_key        = 0; 
+  remarks_count      = 0;
+  remarks_last       = 0;
+  remarks_has_cursor = 0;
+  remarks_setkey_o(1);
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+remarks_close_o()
+{
+  if (remarks_has_cursor) remarks_close_cursor();
+
+  remarks_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+remarks_close_cursor()
+{
+  if (remarks_has_cursor)
+  {
+    EXEC SQL CLOSE :remarks_cursor1;
+    if (sqlca.sqlcode) icrash("remarks_close_cursor");
+  }
+  remarks_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+remarks_setkey_o(n)
+register long n;
+{
+  if (remarks_has_cursor) remarks_close_cursor();
+
+  remarks_key   = 1;
+  remarks_count = 0;
+  remarks_last  = 0;
+  
+  rks_lo.rks_pl = 1;
+  rks_lo.rks_on = 0;
+  
+  rks_hi.rks_pl = 0x7fff;
+  rks_hi.rks_on = 0x7fffffff;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+remarks_startkey_o(p)
+struct rks_item *p;
+{
+  if (remarks_has_cursor) remarks_close_cursor();
+
+  remarks_count = 0;
+  remarks_last  = 0;
+  
+  memcpy(&rks_lo, p, sizeof(struct rks_item));
+  memcpy(&rks_hi, p, sizeof(struct rks_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+remarks_stopkey_o(p)
+struct rks_item *p;
+{
+  memcpy(&rks_hi, p, sizeof(struct rks_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+remarks_read_o(p, mode)
+register struct rks_item *p;
+register long mode;
+{
+  remarks_startkey_o(p);
+  remarks_stopkey_o(p);
+  return remarks_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Order Number
+ *-------------------------------------------------------------------------*/
+remarks_next_o(p, mode)
+register struct rks_item *p;
+register long mode;
+{  
+  struct rks_item work;
+  int l_rks_pl,l_rks_on;
+  if (!remarks_count)
+  {
+    if (remarks_has_cursor) remarks_close_cursor();
+    l_rks_pl=p->rks_pl;
+    l_rks_on=p->rks_on;
+     EXEC SQL ALLOCATE :remarks_cursor1;
+
+     EXEC SQL EXECUTE
+      begin
+          remarks_retrieve.open_cur1(:remarks_cursor1,:l_rks_pl,:l_rks_on);
+      end;
+     END-EXEC;
+
+     if (sqlca.sqlcode) icrash("remarks_open_cursor");
+
+     remarks_has_cursor = 1;
+   }
+   EXEC SQL FETCH :remarks_cursor1 INTO :work;
+  if (sqlca.sqlcode == 0)
+  {
+    remarks_count += 1;
+    remarks_last = (remarks_open_mode & mode);
+    remarks_copy(p,&work);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("remarks_next");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+remarks_write_o(p)
+register struct rks_item *p;
+{
+  struct rks_item2 work;
+
+  remarks_copy_reverse(p,&work); 
+
+  EXEC SQL INSERT INTO remarks(rmks_pl,rmks_on,rmks_text)
+           VALUES (:work.rks_pl,:work.rks_on,:work.rks_text);
+
+  if (sqlca.sqlcode) icrash("remarks_write");
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+remarks_update_o(p)
+register struct rks_item *p;
+{
+ struct rks_item2 work;
+
+ if (remarks_last > 0)
+ {
+    remarks_copy_reverse(p,&work);
+
+    EXEC SQL UPDATE  remarks 
+    SET rmks_pl   = :work.rks_pl,
+        rmks_on   = :work.rks_on,
+        rmks_text = :work.rks_text
+    WHERE rmks_pl = :work.rks_pl
+    AND   rmks_on = :work.rks_on;
+
+    remarks_last = 0;
+
+    if (sqlca.sqlcode) icrash("remarks_update");
+    return 0;
+  }
+  krash("remarks_update", "no current record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+remarks_delete_o(p)
+struct rks_item *p;
+{
+  int l_rmks_pl,l_rmks_on;
+  l_rmks_pl = p->rks_pl;
+  l_rmks_on = p->rks_on;
+  if (remarks_last > 0)
+  {
+    EXEC SQL DELETE FROM remarks 
+    WHERE rmks_pl = :l_rmks_pl
+    AND   rmks_on = :l_rmks_on;
+
+    remarks_last = 0;
+    if (sqlca.sqlcode) icrash("remarks_delete");
+    return 0;
+  }
+  krash("remarks_delete", "no active record", 1);
+}
+remarks_copy(p,q)
+struct rks_item  *p;
+struct rks_item2 *q;
+{
+   p->rks_pl   = q->rks_pl;
+   p->rks_on   = q->rks_on;
+   strcpy(p->rks_text, q->rks_text);
+}
+remarks_copy_reverse(p,q)
+struct rks_item  *p;
+struct rks_item2 *q;
+{
+   q->rks_pl   = p->rks_pl;
+   q->rks_on   = p->rks_on;
+   strcpy(q->rks_text, p->rks_text);
+   q->rks_text[8]='\0';
+}
+/* end of remarks.ec  */
+
+

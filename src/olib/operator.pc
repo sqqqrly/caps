@@ -1,0 +1,293 @@
+/* #define DEBUG */
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Operator File Subroutines.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   |  tjt  Original implementation.
+ *  07/22/99   |  Informix to Oracle Conversion by Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char operator_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct op_item
+{
+   char  op_name[9];
+   char  op_desc[33];
+   char  op_printer[9];
+   char  op_pickline[3];
+   char  op_level[2];
+   char  op_mm[32];
+   char  op_ops[32];
+   char  op_sys[32];
+   char  op_config[32];
+   char  op_prod[32];
+   char  op_sku[32];
+   char  op_label[32];
+};
+
+struct op_item op_lo, op_hi;
+
+long operator_fd         = 0;
+long operator_open_mode  = 0;
+long operator_key        = 0;
+long operator_count      = 0;
+long operator_last       = 0;
+long operator_has_cursor = 0 ;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+SQL_CURSOR operator_cursor1;          /* operator name key   */
+
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+operator_open_o(mode)
+register long mode;
+{
+  operator_fd = 1;
+
+  operator_open_mode  = mode;
+  operator_key        = 0; 
+  operator_count      = 0;
+  operator_last       = 0;
+  operator_has_cursor = 0;
+  operator_setkey_o(1);
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+operator_close_o()
+{
+  if (operator_has_cursor) operator_close_cursor();
+
+  operator_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+operator_close_cursor()
+{
+  if (operator_has_cursor)
+  {
+    EXEC SQL CLOSE :operator_cursor1;
+    if (sqlca.sqlcode) icrash("operator_close_cursor");
+  }
+  operator_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+operator_setkey_o(n)
+register long n;
+{
+  if (operator_has_cursor) operator_close_cursor();
+
+  operator_key   = 1;   
+  operator_count = 0;
+  operator_last  = 0;
+  
+  memset(op_lo.op_name, 0x20, 8);
+  memset(op_hi.op_name, 'z',  8);
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+operator_startkey_o(p)
+struct op_item *p;
+{
+  if (operator_has_cursor) operator_close_cursor();
+
+  operator_count = 0;
+
+  memcpy(&op_lo, p, sizeof(struct op_item));
+  memcpy(&op_hi, p, sizeof(struct op_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+operator_stopkey_o(p)
+struct op_item *p;
+{
+  memcpy(&op_hi, p, sizeof(struct op_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+operator_read_o(p, mode)
+register struct op_item *p;
+register long mode;
+{
+  operator_startkey_o(p);
+  operator_stopkey_o(p);
+  return operator_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Operator Name
+ *-------------------------------------------------------------------------*/
+operator_next_o(p, mode)
+register struct op_item *p;
+register long mode;
+{  
+ struct op_item work;
+ char l_op_name[10];
+  if (!operator_count)
+  {
+     if (operator_has_cursor) operator_close_cursor();
+
+     EXEC SQL ALLOCATE :operator_cursor1;
+     memcpy(l_op_name,op_lo.op_name,9);
+     l_op_name[9]='\0';
+
+     EXEC SQL EXECUTE
+     begin
+         operator_retrieve.open_cur(:operator_cursor1,:l_op_name);
+     end; 
+     END-EXEC;
+
+     if (sqlca.sqlcode) icrash("operator_open_cursor");
+
+     operator_has_cursor = 1;
+
+  }
+  operator_last = 0;
+  
+  EXEC SQL FETCH :operator_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    operator_count += 1;
+    operator_last = (operator_open_mode & mode);
+    memcpy(p, &work, sizeof(struct op_item));
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("operator_next");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+operator_write_o(p)
+register struct op_item *p;
+{
+   struct op_item work;
+  
+   memcpy(&work, p, sizeof(struct op_item));
+
+   work.op_name[8]     ='\0';
+   work.op_desc[32]    ='\0';
+   work.op_printer[8]  ='\0';
+   work.op_pickline[2] ='\0';
+   work.op_level[1]    ='\0';
+   work.op_mm[31]      ='\0';
+   work.op_ops[31]     ='\0';
+   work.op_sys[31]     ='\0';
+   work.op_config[31]  ='\0';
+   work.op_prod[31]    ='\0';
+   work.op_sku[31]     ='\0';
+   work.op_label[31]   ='\0';
+  
+   EXEC SQL INSERT INTO 
+   operator(op_name     ,op_desc     ,op_printer    ,op_pickline,
+            op_level    ,op_mm       ,op_ops        ,op_sys     ,
+            op_config   ,op_prod     ,op_sku        ,op_label)
+   VALUES  (:work.op_name     ,:work.op_desc,:work.op_printer,:work.op_pickline,
+            :work.op_level    ,:work.op_mm  ,:work.op_ops    ,:work.op_sys    ,
+            :work.op_config   ,:work.op_prod,:work.op_sku    ,:work.op_label);
+
+  if (sqlca.sqlcode) icrash("operator_write");
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+operator_update_o(p)
+register struct op_item *p;
+{
+  struct op_item work;
+
+  if (operator_last > 0)
+  {
+    memcpy(&work, p, sizeof(struct op_item));
+    work.op_name[8]     ='\0';
+    work.op_desc[32]    ='\0';
+    work.op_printer[8]  ='\0';
+    work.op_pickline[2] ='\0';
+    work.op_level[1]    ='\0';
+    work.op_mm[31]      ='\0';
+    work.op_ops[31]     ='\0';
+    work.op_sys[31]     ='\0';
+    work.op_config[31]  ='\0';
+    work.op_prod[31]    ='\0';
+    work.op_sku[31]     ='\0';
+    work.op_label[31]   ='\0';
+
+    EXEC SQL UPDATE  operator 
+    SET  op_name    = :work.op_name,   
+         op_desc    = :work.op_desc,
+         op_printer = :work.op_printer,
+         op_pickline= :work.op_pickline,
+         op_level   = :work.op_level,
+         op_mm      = :work.op_mm,
+         op_ops     = :work.op_ops,
+         op_sys     = :work.op_sys,
+         op_config  = :work.op_config,
+         op_prod    = :work.op_prod,
+         op_sku     = :work.op_sku ,
+         op_label   = :work.op_label
+    WHERE op_name = :work.op_name;
+    
+    if (sqlca.sqlcode) icrash("operator_update");
+    return 0;
+  }
+  krash("operator_update", "no current record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+operator_delete_o(p)
+register struct op_item *p;
+{
+  char l_name[10];
+  if (operator_last > 0)
+  {
+    memcpy(l_name,p->op_name,9);
+    l_name[9]='\0';
+
+    EXEC SQL DELETE FROM operator 
+    WHERE op_name = :l_name;
+
+    operator_last = 0;
+
+    if (sqlca.sqlcode) icrash("operator_delete");
+    return 0;
+  }
+  krash("operator_delete", "no active record", 1);
+}
+
+/* end of operator.ec  */
+
+

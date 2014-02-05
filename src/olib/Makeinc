@@ -1,0 +1,137 @@
+#--------------------------------------------------------------------------#
+#  lib sources
+#
+LIB=\
+box_list.pc\
+boxes.pc\
+db_open_close.pc\
+log.pc\
+log_error.pc\
+lot.pc\
+group.pc\
+operator.pc\
+order.pc\
+order_cust.pc\
+order_cust_read.pc\
+order_custitem_read.pc\
+packing_list.pc\
+pending.pc\
+pick.pc\
+picker.pc\
+picker_order.pc\
+pmfile.pc\
+prodfile.pc\
+queue.pc\
+remarks.pc\
+restock.pc\
+ship_label.pc\
+short.pc\
+tote_label.pc\
+transaction.pc
+
+#--------------------------------------------------------------------------#
+#  lib targets
+#
+all::	lib
+lib:\
+ $(LLIB)(box_list.o)\
+ $(LLIB)(boxes.o)\
+ $(LLIB)(db_open_close.o)\
+ $(LLIB)(log.o)\
+ $(LLIB)(log_error.o)\
+ $(LLIB)(lot.o)\
+ $(LLIB)(group.o)\
+ $(LLIB)(operator.o)\
+ $(LLIB)(order.o)\
+ $(LLIB)(order_cust.o)\
+ $(LLIB)(order_cust_read.o)\
+ $(LLIB)(order_custitem_read.o)\
+ $(LLIB)(packing_list.o)\
+ $(LLIB)(pending.o)\
+ $(LLIB)(pick.o)\
+ $(LLIB)(picker.o)\
+ $(LLIB)(picker_order.o)\
+ $(LLIB)(pmfile.o)\
+ $(LLIB)(prodfile.o)\
+ $(LLIB)(queue.o)\
+ $(LLIB)(remarks.o)\
+ $(LLIB)(restock.o)\
+ $(LLIB)(ship_label.o)\
+ $(LLIB)(short.o)\
+ $(LLIB)(tote_label.o)\
+ $(LLIB)(transaction.o)
+	@echo lib is up to date
+
+#--------------------------------------------------------------------------#
+#  lib dependencies
+#
+
+  box_list.c:        box_list.pc
+  boxes.c:           boxes.pc
+  db_open_close.c:   db_open_close.pc
+  log.c:             log.pc
+  log_error.c:             log_error.pc
+  lot.c:             lot.pc
+  group.c:           group.pc
+  operator.c:        operator.pc
+  order.c:           order.pc
+  order_cust.c:      order_cust.pc
+  order_cust_read.c:      order_cust_read.pc
+  order_custitem_read.c:      order_custitem_read.pc
+  packing_list.c:    packing_list.pc 
+  pending.c:         pending.pc
+  pick.c:            pick.pc
+  picker.c:          picker.pc
+  picker_order.c:    picker_order.pc
+  pmfile.c:          pmfile.pc
+  prodfile.c:        prodfile.pc
+  queue.c:           queue.pc 
+  remarks.c:         remarks.pc
+  restock.c:         restock.pc
+  ship_label.c:      ship_label.pc
+  short.c:           short.pc 
+  tote_label.c:      tote_label.pc
+  transaction.c:     transaction.pc
+
+ $(LLIB)(box_list.o):        box_list.pc
+ $(LLIB)(boxes.o):           boxes.pc
+ $(LLIB)(db_open_close.o):   db_open_close.pc
+ $(LLIB)(log.o):             log.pc
+ $(LLIB)(log_error.o):             log_error.pc
+ $(LLIB)(lot.o):             lot.pc
+ $(LLIB)(group.o):           group.pc
+ $(LLIB)(operator.o):        operator.pc
+ $(LLIB)(order.o):           order.pc
+ $(LLIB)(order_cust_read.o):      order_cust_read.pc
+ $(LLIB)(order_custitem_read.o):      order_custitem_read.pc
+ $(LLIB)(order_cust.o):      order_cust.pc
+ $(LLIB)(packing_list.o):    packing_list.pc 
+ $(LLIB)(pending.o):         pending.pc
+ $(LLIB)(pick.o):            pick.pc
+ $(LLIB)(picker.o):          picker.pc
+ $(LLIB)(picker_order.o):    picker_order.pc
+ $(LLIB)(pmfile.o):          pmfile.pc
+ $(LLIB)(prodfile.o):        prodfile.pc
+ $(LLIB)(queue.o):           queue.pc 
+ $(LLIB)(remarks.o):         remarks.pc
+ $(LLIB)(restock.o):         restock.pc
+ $(LLIB)(ship_label.o):      ship_label.pc
+ $(LLIB)(short.o):           short.pc 
+ $(LLIB)(tote_label.o):      tote_label.pc
+ $(LLIB)(transaction.o):     transaction.pc
+
+#--------------------------------------------------------------------------#
+#  clean lib
+#
+cleanall:: cleanlib
+cleanlib:
+	@echo "Removing lib Library Units $(LIB:.c=.o)"
+	@-ar -d $(LLIB) $(LIB:.c=.o)
+
+#--------------------------------------------------------------------------#
+#  print lib
+#
+printall:: printlib
+printlib: lastprint
+lastprint:: $(LIB); @$(PRINT)
+

@@ -1,0 +1,388 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Picker Order File Subroutines.
+ *
+ *  Note:           Uses a normal cursor 
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/05/95   |  tjt  Original implementation.
+ *  07/27/99   |  Infomix to Oracle Conversion by Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char picker_order_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct pko_item
+{
+   long  order_number;
+   long  picker_id;
+   short pickline;
+   short order_status;
+   long  start_time;
+   long  completion_time;
+   long  picking_time;
+   long  lines_picked;
+   long  units_picked;
+};
+struct pko_item pko_lo, pko_hi;
+
+long picker_order_fd         = 0;
+long picker_order_open_mode  = 0;
+long picker_order_key        = 0;
+long picker_order_count      = 0;
+long picker_order_last       = 0;
+long picker_order_has_cursor = -1;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+ SQL_CURSOR pko_cursor0;               /* no key                */
+ SQL_CURSOR pko_cursor1;               /* order + pl + time     */
+ SQL_CURSOR pko_cursor2;               /* picker + start key    */
+
+EXEC SQL END DECLARE SECTION;
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+picker_order_open_o(mode)
+register long mode;
+{
+  picker_order_fd = 1;
+
+  picker_order_open_mode  = mode;
+  picker_order_key        = 0;
+  picker_order_count      = 0;
+  picker_order_last       = 0;
+  picker_order_has_cursor = -1;
+  picker_order_setkey_o(0);
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+picker_order_close_o()
+{
+  if (picker_order_has_cursor >= 0) picker_order_close_cursor();
+
+  picker_order_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+picker_order_close_cursor()
+{
+  if (picker_order_has_cursor >= 0)
+  {
+    switch (picker_order_has_cursor)
+    {
+      case 0:
+             EXEC SQL CLOSE :pko_cursor0;
+             if (sqlca.sqlcode) icrash("picker_order_close_cursor 0");
+             break;
+      case 1:
+             EXEC SQL CLOSE :pko_cursor1;
+             if (sqlca.sqlcode) icrash("picker_order_close_cursor 1");
+             break;
+      case 2: 
+             EXEC SQL CLOSE :pko_cursor2;
+             if (sqlca.sqlcode) icrash("picker_order_close_cursor 2");
+             break;
+    }
+  }
+  picker_order_has_cursor = -1;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+picker_order_setkey_o(n)
+register long n;
+{
+  if (picker_order_has_cursor >= 0) picker_order_close_cursor();
+
+  picker_order_key   = n < 0 || n > 2 ? 0 : n;   
+  picker_order_count = 0;
+  picker_order_last  = 0;
+  
+  pko_lo.pickline        = 0;
+  pko_lo.order_number    = 0;
+  pko_lo.picker_id       = 0;
+  pko_lo.start_time      = 0;
+  pko_lo.completion_time = 0;
+  
+  pko_hi.pickline        = 0x7fff;
+  pko_hi.order_number    = 0x7fffffff;
+  pko_hi.picker_id       = 0x7fffffff;
+  pko_hi.start_time      = 0x7fffffff;
+  pko_hi.completion_time = 0x7fffffff;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+picker_order_startkey_o(p)
+struct pko_item *p;
+{
+  if (picker_order_has_cursor >= 0) picker_order_close_cursor();
+
+  if (picker_order_key > 2) picker_order_key -= 3;
+  
+  picker_order_count = 0;
+  picker_order_last  = 0;
+  
+  memcpy(&pko_lo, p, sizeof(struct pko_item));
+  memcpy(&pko_hi, p, sizeof(struct pko_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+picker_order_stopkey_o(p)
+struct pko_item *p;
+{
+  memcpy(&pko_hi, p, sizeof(struct pko_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+picker_order_read_o(p, mode)
+register struct pko_item *p;
+register long mode;
+{
+  picker_order_startkey_o(p);
+  picker_order_stopkey_o(p);
+  return picker_order_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *-------------------------------------------------------------------------*/
+picker_order_next_o(p, mode)
+register struct pko_item *p;
+register long mode;
+{  
+  switch (picker_order_key)
+  {
+    case 0:  return picker_order_next0(p);
+    case 1:  return picker_order_next1(p);
+    case 2:  return picker_order_next2(p);
+  }
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key
+ *-------------------------------------------------------------------------*/
+picker_order_next0(p)
+register struct pko_item *p;
+{  
+  struct pko_item work;
+  
+  if (!picker_order_count)
+  { 
+    if (picker_order_has_cursor >= 0) picker_order_close_cursor();
+    
+    EXEC SQL  ALLOCATE :pko_cursor0;
+    
+    EXEC SQL EXECUTE
+    begin
+        picker_order_retrieve.open_cur0(:pko_cursor0);
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("picker_order_open_cursor 0");
+    
+    picker_order_has_cursor = picker_order_key;
+  }
+  picker_order_last = 0;
+  
+  EXEC SQL FETCH :pko_cursor0 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    picker_order_count += 1;
+    picker_order_last   = 1;
+    memcpy(p, &work, sizeof(struct pko_item));
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("picker_order_next 0");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Order, Pickline, and Completion Time 
+ *-------------------------------------------------------------------------*/
+picker_order_next1(p)
+register struct pko_item *p;
+{  
+  struct pko_item work;
+  long l_order_no,l_pickline,l_completion_time;
+  
+  if (!picker_order_count)
+  {
+     if (picker_order_has_cursor >= 0) picker_order_close_cursor();
+    
+    EXEC SQL  ALLOCATE :pko_cursor1;
+    
+     l_order_no        = p->order_number;
+     l_pickline        = p->pickline;
+     l_completion_time = p->completion_time;
+
+     EXEC SQL EXECUTE
+     begin
+        picker_order_retrieve.open_cur1(:pko_cursor1,:l_order_no,
+                                        :l_pickline,:l_completion_time);
+     end;
+     END-EXEC;
+
+     if (sqlca.sqlcode) icrash("picker_order_open_cursor 1");
+    
+     picker_order_has_cursor = picker_order_key;
+  }
+  picker_order_last = 0;
+  
+  EXEC SQL FETCH  :pko_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    picker_order_count += 1;
+    picker_order_last   = 1;
+    memcpy(p, &work, sizeof(struct pko_item));
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("picker_order_next 1");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Picker ID and Start Time 
+ *-------------------------------------------------------------------------*/
+picker_order_next2(p)
+register struct pko_item *p;
+{  
+  struct pko_item work;
+  long l_picker_id,l_start_time;
+
+  if (!picker_order_count)
+  {
+     if (picker_order_has_cursor >= 0) picker_order_close_cursor();
+    
+     EXEC SQL  ALLOCATE :pko_cursor2;
+    
+     l_picker_id       = p->picker_id;
+     l_start_time      = p->start_time;
+
+     EXEC SQL EXECUTE
+     begin
+        picker_order_retrieve.open_cur2(:pko_cursor2,:l_picker_id,
+                                        :l_start_time);
+     end;
+     END-EXEC;
+
+     if (sqlca.sqlcode) icrash("picker_order_open_cursor 2");
+    
+     picker_order_has_cursor = picker_order_key;
+  }
+  picker_order_last = 0;
+  
+  EXEC SQL FETCH  :pko_cursor2 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    picker_order_count += 1;
+    picker_order_last   = 1;
+    memcpy(p, &work, sizeof(struct pko_item));
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("picker_order_next 2");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+picker_order_write_o(p)
+register struct pko_item *p;
+{
+  struct pko_item new;
+  
+  memcpy(&new, p, sizeof(struct pko_item));
+
+  EXEC SQL INSERT INTO picker_order (
+  order_number,picker_id   ,pickline    ,
+  order_status,start_time  ,completion_time,
+  picking_time,lines_picked,units_picked )
+  values (
+  :new.order_number,:new.picker_id   ,:new.pickline,
+  :new.order_status,:new.start_time  ,:new.completion_time,
+  :new.picking_time,:new.lines_picked,:new.units_picked);
+
+  if (sqlca.sqlcode) icrash("picker_order_write");
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+picker_order_update_o(p)
+register struct pko_item *p;
+{
+  struct pko_item new;
+
+  if (picker_order_last > 0)
+  {
+    memcpy(&new, p, sizeof(struct pko_item));
+    picker_order_last = 0;
+    EXEC SQL UPDATE picker_order
+    SET order_number    = :new.order_number,
+        picker_id       = :new.picker_id,
+        pickline        = :new.pickline,
+        order_status    = :new.order_status,
+        start_time      = :new.start_time,
+        completion_time = :new.completion_time,
+        picking_time    = :new.picking_time,
+        lines_picked    = :new.lines_picked,
+        units_picked    = :new.units_picked
+    WHERE order_number    = :new.order_number
+    AND   pickline        = :new.pickline
+    AND   completion_time = :new.completion_time;
+
+    if (sqlca.sqlcode) icrash("picker_order_update");
+    return 0;
+  }
+  krash("picker_order_update", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+picker_order_delete_o(p)
+register struct pko_item *p;
+{
+  struct pko_item new;
+  if (picker_order_last > 0)
+  {
+    picker_order_last = 0;
+    memcpy(&new, p, sizeof(struct pko_item));
+
+    EXEC SQL DELETE FROM picker_order
+    WHERE order_number    = :new.order_number
+    AND   pickline        = :new.pickline
+    AND   completion_time = :new.completion_time;
+    
+    if (sqlca.sqlcode) icrash("picker_order_delete 2");
+    return 0;
+  }
+  krash("picker_order_delete", "no active record", 1);
+}
+
+/* end of picker_order.ec  */
+
+

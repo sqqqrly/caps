@@ -1,0 +1,1527 @@
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+#define SQLFOUND 0
+#define TRUE  1
+#define FALSE  0
+#define SERIALNBR  1
+
+
+struct ordercust
+{
+	long line_no;
+	long caps_order_no;
+        long pickline_no;
+	char store_no[6];
+        char dc_code[4];
+        char ord_constant[5];
+	char group_code[4];
+	char planned_pick_date[11];
+        long start_box;
+        long end_box;
+        short order_status;
+        short xmit_status;
+	long cust_order_nbr;
+};
+
+struct ordercustitem
+{
+	long cust_order_nbr;
+	char sku_no[7];
+	char pick_location[8];
+        char descr[31];
+	long ordered_qty;
+	long ratio;
+        long assign_tote_id;
+        char work_code[12];
+	char merch_type[2];
+        long picked_qty;
+        long actual_tote_id;
+        long picker_id;
+        char pick_datetime[20];
+	long cust_item_nbr;
+};
+
+
+iOrderGet(order_cust)
+struct ordercust *order_cust;
+{
+        EXEC SQL BEGIN DECLARE SECTION;
+		long  lCapsOrderNo;
+                long  lPickLineNo;
+		char  szStoreNo[5];
+		char  szDcCode[4];
+		char  szOrderConstant[5];
+		char  szGroupCode[4];
+		char  szPlannedPickDate[11];
+                long  lStartBox;
+                long  lEndBox;
+                short nOrderStatus;
+                short nXmitStatus;
+		long  lCustOrderNbr;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+	lCapsOrderNo = 0			;
+	lCapsOrderNo = order_cust->caps_order_no;
+        lPickLineNo  = order_cust->pickline_no  ;
+
+	memset( szStoreNo, 0, sizeof( szStoreNo ) );
+        memset( szDcCode, 0, sizeof( szDcCode ) );
+        memset( szOrderConstant, 0, sizeof( szOrderConstant ) );
+	memset( szGroupCode, 0, sizeof( szGroupCode ) );
+	memset( szPlannedPickDate, 0, sizeof( szPlannedPickDate ) );
+        lStartBox     = 0;
+        lEndBox       = 0;
+        nOrderStatus  = 0;
+        nXmitStatus   = 0;
+	lCustOrderNbr = 0;
+
+EXEC SQL SELECT caps_order_no,
+                        pickline_no,
+			store_no,
+                        dc_code,
+                        ord_constant,
+			group_code,
+			planned_pick_date,
+                        start_box,
+                        end_box,
+                        order_status,
+                        xmit_status,
+			cust_order_nbr
+	INTO
+			:lCapsOrderNo,
+                        :lPickLineNo,
+			:szStoreNo,
+                        :szDcCode,
+                        :szOrderConstant,
+			:szGroupCode,
+			:szPlannedPickDate,
+                        :lStartBox,
+                        :lEndBox,
+                        :nOrderStatus,
+                        :nXmitStatus,
+			:lCustOrderNbr
+	FROM order_cust
+	WHERE caps_order_no = :lCapsOrderNo 
+        AND   pickline_no   = :lPickLineNo      ;
+	
+	iExists = ( iSQLError() == SQLFOUND ? TRUE : FALSE);
+
+	if ( iSQLError() < SQLFOUND )
+	{
+		char szError[256];
+		sprintf(szError, "iOrderGet Error = %d", iSQLError() );
+		icrash( szError );
+	}
+	else if ( iExists )
+	{
+		StrClip( szStoreNo );
+		StrClip( szDcCode );
+		StrClip( szOrderConstant );
+                StrClip( szGroupCode );
+		StrClip( szPlannedPickDate );
+
+		order_cust->caps_order_no  =  lCapsOrderNo;
+                order_cust->pickline_no    =  lPickLineNo;
+		strcpy(order_cust->store_no , szStoreNo);
+		strcpy( order_cust->dc_code, szDcCode );
+		strcpy( order_cust->ord_constant, szOrderConstant );
+		strcpy( order_cust->group_code, szGroupCode );
+		strcpy( order_cust->planned_pick_date, szPlannedPickDate );
+                order_cust->start_box      = lStartBox;
+                order_cust->end_box        = lEndBox;
+                order_cust->order_status   = nOrderStatus;
+                order_cust->xmit_status    = nXmitStatus;
+		order_cust->cust_order_nbr = lCustOrderNbr;
+	}
+
+	return(iExists);
+}
+
+/*********************************************************************
+** return true if order_cust exists
+*********************************************************************/
+/*
+int iSearchOrder(struct order_cust *order_cust_late)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	char	szPlannedPickDate[11];
+	char	szGroupCode[4]	;
+	char 	szStoreNo[5]	;
+	long 	lCustOrderNbr		;
+        long    lPickLineNo             ;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+	memset(szPlannedPickDate, 0, sizeof(szPlannedPickDate))	;
+	memset(szStoreNo, 0, sizeof(szStoreNo))	;
+	memset(szGroupCode, 0, sizeof(szGroupCode))		;
+        lPickLineNo   = 0;
+        lCustOrderNbr = 0;
+
+	strcpy(szPlannedPickDate, order_cust_late->planned_pick_date)	;
+	strcpy(szStoreNo, order_cust_late->store_no)			;
+	strcpy(szGroupCode, order_cust_late->group_code)		;
+        lPickLineNo = order_cust_late->pickline_no                      ;
+
+	EXEC SQL
+	SELECT 	cust_order_nbr
+	INTO 	:lCustOrderNbr
+	FROM 	order_cust
+	WHERE 	planned_pick_date	= :szPlannedPickDate
+	AND	store_no		= :szStoreNo
+	AND	group_code		= :szGroupCode		
+        AND     pickline_no             = :lPickLineNo        ;
+	
+	iExists = ( iSQLError() == SQLFOUND ? TRUE : FALSE);
+	if ( iSQLError() < SQLFOUND )
+	{
+		char szError[256];
+		sprintf(szError, "iSrearchOrder Error = %d", iSQLError() );
+		icrash( szError );
+	}
+	return(iExists);
+}
+
+*/
+
+/*
+int iGetRegularOrder(order_cust_late, order_cust_regular )
+struct ordercust *order_cust_late;
+struct ordercust *order_cust_regular;
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+		long  lCapsOrderNo;
+                long  lPickLineNo;
+		char  szStoreNo[5];
+                char  szDcCode[4];
+                char  szOrderConstant[5];
+		char  szGroupCode[4];
+		char  szPlannedPickDate[11];
+                long  lStartBox;
+                long  lEndBox;
+                short nOrderStatus;
+                short nXmitStatus;
+		long  lCustOrderNbr;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+        lCapsOrderNo  = 0;
+        lPickLineNo   = 0;
+        lPickLineNo   = order_cust_late->pickline_no;
+
+        memset(szStoreNo, 0, sizeof(szStoreNo));
+        strcpy(szStoreNo, order_cust_late->store_no);
+
+        memset(szGroupCode, 0 , sizeof(szGroupCode));
+        strcpy(szGroupCode, order_cust_late->group_code);
+
+	memset(szPlannedPickDate, 0, sizeof(szPlannedPickDate));
+	strcpy(szPlannedPickDate, order_cust_late->planned_pick_date);
+
+        memset(szDcCode, 0, sizeof(szDcCode));
+        memset(szOrderConstant, 0, sizeof(szOrderConstant));
+        lStartBox     = 0;
+        lEndBox       = 0;
+        nOrderStatus  = 0;
+        nXmitStatus   = 0;
+	lCustOrderNbr = 0;
+
+	EXEC SQL
+	SELECT
+			caps_order_no,
+                        pickline_no,
+			store_no,
+                        dc_code,
+                        ord_constant,
+			group_code,
+			planned_pick_date,
+                        start_box,
+                        end_box,
+                        order_status,
+                        xmit_status,
+			cust_order_nbr
+	INTO
+			:lCapsOrderNo,
+                        :lPickLineNo,
+			:szStoreNo,
+                        :szDcCode,
+                        :szOrderConstant,
+			:szGroupCode,
+			:szPlannedPickDate,
+                        :lStartBox,
+                        :lEndBox,
+                        :nOrderStatus,
+                        :nXmitStatus,
+			:lCustOrderNbr
+	FROM order_cust
+	WHERE planned_pick_date 	= :szPlannedPickDate 
+	AND   group_code		= :szGroupCode
+        AND   pickline_no               = :lPickLineNo
+	AND   store_no			= :szStoreNo          ;
+	
+	iExists = ( iSQLError() == SQLFOUND ? TRUE : FALSE);
+
+	if ( iSQLError() < SQLFOUND )
+	{
+		char szError[256];
+		sprintf(szError, "iGetRegularOrder Error = %d", iSQLError() );
+		icrash( szError );
+	}
+	else if ( iExists )
+	{
+           StrClip( szStoreNo );
+           StrClip( szDcCode );
+           StrClip( szOrderConstant );
+           StrClip( szGroupCode );
+           StrClip( szPlannedPickDate );
+
+           order_cust_regular->caps_order_no  = lCapsOrderNo;
+           order_cust_regular->pickline_no    = lPickLineNo;
+           strcpy(order_cust_regular->store_no , szStoreNo);
+           strcpy(order_cust_regular->dc_code, szDcCode);
+           strcpy(order_cust_regular->ord_constant, szOrderConstant);
+           strcpy(order_cust_regular->group_code, szGroupCode);
+           strcpy(order_cust_regular->planned_pick_date,szPlannedPickDate);
+           order_cust_regular->start_box      = lStartBox;
+           order_cust_regular->end_box        = lEndBox;
+           order_cust_regular->order_status   = nOrderStatus;
+           order_cust_regular->xmit_status    = nXmitStatus;
+           order_cust_regular->cust_order_nbr = lCustOrderNbr;
+	}
+	return(iExists);
+}
+*/
+
+/*********************************************************************
+** order_cust table delete
+*********************************************************************/
+int iOrderCustDelete(struct ordercust *order_cust)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long lCapsOrderNo;
+                 long lCustOrderNbr;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+        lCapsOrderNo  = order_cust->caps_order_no;
+        lCustOrderNbr = order_cust->cust_order_nbr;
+
+
+        EXEC SQL
+        DELETE 
+        FROM    order_cust_item
+        WHERE   cust_order_nbr = :lCustOrderNbr;
+
+	if ( iSQLError() == SQLFOUND )
+		iExists = TRUE;
+	else
+		iExists = FALSE;
+
+	if ( !iExists
+	&& ( iSQLError() != SQLNOTFOUND ) )
+	{
+		char szError[256];
+		sprintf(szError, "iOrderItemDelete Error = %d", iSQLError() );
+		icrash( szError );
+	}
+        EXEC SQL
+        DELETE 
+        FROM    order_cust
+        WHERE   caps_order_no  = :lCapsOrderNo			
+        AND     cust_order_nbr = :lCustOrderNbr;	
+
+	if ( iSQLError() != SQLFOUND
+	&&   iSQLError() != SQLNOTFOUND )
+	{
+		char szError[256];
+		sprintf(szError, "iOrderCustDelete Error = %d", iSQLError() );
+		icrash( szError );
+		return(FALSE);
+	}
+	return(iExists);
+}
+
+/*********************************************************************
+** order_cust table insert
+**********************************************************************/
+int iOrderInsert(struct ordercust *order_cust)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long  lLineNo;
+                 long  lCapsOrderNo;
+                 long  lPickLineNo;
+                 char  *pszStoreNo;
+                 char  *pszDcCode;
+                 char  *pszOrderConstant;
+                 char  *pszGroupCode;
+                 char  *pszPlannedPickDate;
+                 long  lStartBox;
+                 long  lEndBox;
+                 long nOrderStatus;
+                 long nXmitStatus;
+                 long  lCustOrderNbr;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+	
+        lLineNo            = order_cust->line_no;
+        lCapsOrderNo       = order_cust->caps_order_no;
+        lPickLineNo        = order_cust->pickline_no;
+        pszStoreNo         = order_cust->store_no;
+        pszDcCode          = order_cust->dc_code;
+        pszOrderConstant   = order_cust->ord_constant;
+        pszGroupCode       = order_cust->group_code;
+        lStartBox          = order_cust->start_box;
+        lEndBox            = order_cust->end_box;
+        nOrderStatus       = order_cust->order_status;
+        nXmitStatus        = order_cust->xmit_status;
+        pszPlannedPickDate = order_cust->planned_pick_date;
+        lCustOrderNbr      = 0;
+
+
+     EXEC SQL SELECT cust_order_nbr.nextval
+              INTO   :lCustOrderNbr
+              FROM   dual;
+
+        EXEC SQL
+        INSERT INTO order_cust
+                  ( line_no, 
+		    caps_order_no, 
+		    pickline_no,
+                    store_no,
+                    dc_code,
+                    ord_constant,
+                    group_code,
+                    start_box, 
+		    end_box, order_status, xmit_status, 
+			planned_pick_date,
+			cust_order_nbr)
+        VALUES
+                  ( :lLineNo,
+                    :lCapsOrderNo,
+                    :lPickLineNo,
+                    :pszStoreNo,
+                    :pszDcCode,
+                    :pszOrderConstant,
+                    :pszGroupCode,
+                    :lStartBox,
+                    :lEndBox,
+                    :nOrderStatus,
+                    :nXmitStatus,
+	             to_date(:pszPlannedPickDate,'yyyymmdd'),
+                    :lCustOrderNbr);
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+		char szError[256];
+		sprintf(szError, "iOrderCustInsert Error = %d", iSQLError() );
+		icrash( szError );
+	}
+
+	return(iExists);
+}
+
+/*********************************************************************
+** return true if order_cust exists
+*/
+int iOrderFind(struct ordercust *order_cust)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long lCapsOrderNo;
+                 long lCustOrderNbr;
+                 long lPickLineNo;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+        lCapsOrderNo = 0;
+        lCapsOrderNo = order_cust->caps_order_no;
+        lPickLineNo  = 0;
+        lPickLineNo  = order_cust->pickline_no;
+
+        EXEC SQL
+        SELECT  cust_order_nbr
+        INTO    :lCustOrderNbr
+        FROM    order_cust
+        WHERE   caps_order_no = :lCapsOrderNo			
+        AND     pickline_no   = :lPickLineNo;
+	
+	iExists = ( iSQLError() == SQLFOUND ? TRUE : FALSE);
+	if ( iSQLError() < SQLFOUND )
+	{
+		char szError[256];
+		sprintf(szError, "iOrderFind Error = %d", iSQLError() );
+		icrash( szError );
+	}
+	else if ( iExists )
+	{
+                order_cust->cust_order_nbr = lCustOrderNbr;
+	}
+	return(iExists);
+}
+
+/*********************************************************************
+** order_cust_item table insert
+**********************************************************************/
+int iOrderItemInsert(struct ordercustitem *order_cust_item)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                long lCustOrderNbr;
+                char *pszSkuNo;
+                char *pszPickLocation;
+                char *pszDescr;
+                long lOrderedQty;
+                long lRatio;
+                long lAssignToteId;
+                char *pszWorkCode;
+                char *pszMerchType;
+                long lPickedQty;
+                long lActualToteId;
+                long lPickerId;
+                char *pszPickDateTime;
+		long lCustItemNbr;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+	
+        lCustOrderNbr   = order_cust_item->cust_order_nbr;
+        pszSkuNo        = order_cust_item->sku_no;
+        pszPickLocation = order_cust_item->pick_location;
+        pszDescr        = order_cust_item->descr;
+        lOrderedQty     = order_cust_item->ordered_qty;
+        lRatio          = order_cust_item->ratio;
+        lAssignToteId   = order_cust_item->assign_tote_id;
+        pszWorkCode     = order_cust_item->work_code;
+        pszMerchType    = order_cust_item->merch_type;
+        lPickedQty      = order_cust_item->picked_qty;
+        lActualToteId   = order_cust_item->actual_tote_id;
+        lPickerId       = order_cust_item->picker_id;
+        pszPickDateTime = order_cust_item->pick_datetime;
+
+     EXEC SQL SELECT cust_item_nbr.nextval
+              INTO   :lCustItemNbr
+              FROM   dual;
+
+        EXEC SQL
+        INSERT INTO order_cust_item
+                  ( cust_order_nbr,
+                    sku_no,
+                    pick_location,
+		    descr,
+		    ordered_qty,
+		    ratio,
+                    assign_tote_id,
+                    picked_qty,
+                    actual_tote_id,
+                    picker_id,
+                    work_code,
+                    merch_type,
+		    pick_datetime,
+                    cust_item_nbr)
+        VALUES
+                  ( :lCustOrderNbr,
+                    :pszSkuNo,
+                    :pszPickLocation,
+                    :pszDescr,
+                    :lOrderedQty,
+                    :lRatio,
+                    :lAssignToteId,
+                    :lPickedQty,
+                    :lActualToteId,
+                    :lPickerId,
+                    :pszWorkCode,
+                    :pszMerchType,
+			sysdate,
+                    :lCustItemNbr);
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+           char szError[256];
+           sprintf(szError, "iOrderCustItemInsert Error = %d", iSQLError() );
+           icrash( szError );
+	}
+
+	return(iExists);
+}
+
+/*********************************************************************
+** order_cust_item table delete
+*********************************************************************/
+int iOrderItemDelete(long cust_item_nbr)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long lCustItemNbr;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+        lCustItemNbr = 0;
+        lCustItemNbr = cust_item_nbr;
+
+        EXEC SQL
+        DELETE 
+        FROM   order_cust_item
+        WHERE  cust_item_nbr = :lCustItemNbr;
+
+	if ( iSQLError() == SQLFOUND )
+		iExists = TRUE;
+	else
+		iExists = FALSE;
+
+	if ( !iExists
+	&& ( iSQLError() != SQLNOTFOUND ) )
+	{
+		char szError[256];
+		sprintf(szError, "iOrderItemDelete Error = %d", iSQLError() );
+		icrash( szError );
+	}
+	return(iExists);
+}
+
+/*********************************************************************
+** order_cust table update of order_status
+********************************************************************/
+int iOrderUpdate(struct ordercust *order_cust)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long  lCapsOrderNo;
+                 long  lPickLineNo;
+                 short nOrderStatus;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+        lCapsOrderNo = 0;
+        lCapsOrderNo = order_cust->caps_order_no;
+
+        lPickLineNo  = 0;
+        lPickLineNo  = order_cust->pickline_no;
+
+        nOrderStatus = 0;
+        nOrderStatus = order_cust->order_status;
+
+        EXEC SQL
+        UPDATE  order_cust 
+        SET     order_status  = :nOrderStatus
+        WHERE   caps_order_no = :lCapsOrderNo
+        AND     pickline_no   = :lPickLineNo; 
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+		char szError[256];
+		sprintf(szError, "iOrderUpdate Error = %d", iSQLError() );
+		icrash( szError );
+	}
+	return(iExists);
+}
+
+/*********************************************************************
+** order_cust table update of xmit_status
+********************************************************************/
+int iOrderUpdate1(struct ordercust *order_cust)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long  lCustOrderNbr;
+                 short nXmitStatus;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+        lCustOrderNbr = 0;
+        lCustOrderNbr = order_cust->cust_order_nbr;
+
+        nXmitStatus  = 0;
+        nXmitStatus  = order_cust->xmit_status;
+
+        EXEC SQL
+        UPDATE  order_cust 
+        SET     xmit_status    = :nXmitStatus
+        WHERE   cust_order_nbr = :lCustOrderNbr;
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+		char szError[256];
+		sprintf(szError, "iOrderUpdate Error = %d", iSQLError() );
+		icrash( szError );
+	}
+	return(iExists);
+}
+
+/**************************************************************************
+		Create cursor for selecting all data from the table
+		using a where clause from the calling program
+**************************************************************************/
+
+int iOrderCustCreateCursor( char *szWhereStmt )
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 char szSQLStmt[1024];
+		SQL_CURSOR order_cursor;
+	EXEC SQL END DECLARE SECTION;
+
+        char *szSlctStmt = "SELECT "
+                                        "line_no, "
+                                        "caps_order_no, "
+                                        "pickline_no, "
+                                        "store_no, "
+                                        "dc_code, "
+                                        "ord_constant, "
+                                        "group_code, "
+                                        "planned_pick_date, "
+                                        "start_box, "
+                                        "end_box, "
+                                        "order_status, "
+                                        "xmit_status, "
+                                        "cust_order_nbr "
+                           "FROM order_cust ";
+
+        //char *szOrderStmt = " ORDER BY pickline_no, line_no desc";
+
+        sprintf(szSQLStmt, "%s %s %s;", szSlctStmt, szWhereStmt);
+        //sprintf(szSQLStmt, "%s %s %s;", szSlctStmt, szWhereStmt, szOrderStmt);
+
+        //EXEC SQL PREPARE order_select FROM :szSQLStmt;
+/*
+	EXEC SQL
+		DECLARE order_cursor CURSOR for
+		szSQLStmt;	
+*/
+
+	EXEC SQL
+		DECLARE order_cursor CURSOR for
+        	SELECT 
+                            line_no,  
+                             caps_order_no,  
+                             pickline_no,  
+                            store_no,  
+                            dc_code,  
+                            ord_constant,  
+                            group_code,  
+				start_box,  
+                            end_box,  
+                            order_status,  
+                            xmit_status,  
+                            cust_order_nbr  ,
+                            to_char(planned_pick_date,'YYYY-MM-DD')
+                            FROM order_cust  
+				where order_status = 0  and xmit_status = 0;
+
+	if ( iSQLError() < SQLFOUND ) {
+           char szError[256];
+           sprintf(szError,
+                   "iOrderCustCreateCursor Prepare Error = %d",
+                   iSQLError());
+
+           icrash(szError);
+           icrash(szSQLStmt);
+           return(0);
+	}
+
+	EXEC SQL open order_cursor;
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError,
+                     "iOrderCustCreateCursor Declare Error = %d",
+                     iSQLError());
+             icrash(szError);
+             return(0);
+	}
+
+/*
+        EXEC SQL CLOSE order_select;
+					
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError,
+                     "iOrderCustCreateCursor Free Error = %d",
+                     iSQLError());
+             icrash(szError);
+             icrash(szSQLStmt);
+             return(0);
+	}
+
+	EXEC SQL OPEN order_cursor;
+
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError,
+                     "OrderCustCreateCursor Open Error = %d",
+                     iSQLError());
+             icrash(szError);
+             return(0);
+	}
+*/
+
+        return(TRUE);
+}
+
+
+/**************************************************************************
+		Fetch next row from cursor
+**************************************************************************/
+int iOrderCustFetchNext(struct ordercust *order_cust)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long  lLineNo;
+                 long  lCapsOrderNo;
+                 long  lPickLineNo;
+                 char  szStoreNo[6];
+                 char  szDcCode[4];
+                 char  szOrderConstant[5];
+                 char  szGroupCode[4];
+                 char  szPlannedPickDate[11];
+                 long  lStartBox;
+                 long  lEndBox;
+                 short nOrderStatus;
+                 short nXmitStatus;
+                 long  lCustOrderNbr;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+        lCapsOrderNo  = 0;
+        lPickLineNo   = 0;
+        memset(szStoreNo, 0, sizeof(szStoreNo));
+        memset(szDcCode, 0, sizeof(szDcCode));
+        memset(szOrderConstant, 0, sizeof(szOrderConstant));
+        memset(szGroupCode, 0, sizeof(szGroupCode));
+        memset(szPlannedPickDate, 0, sizeof(szPlannedPickDate));
+        lStartBox     = 0;
+        lEndBox       = 0;
+        nOrderStatus  = 0;
+        nXmitStatus   = 0;
+	lCustOrderNbr = 0;
+
+        EXEC SQL FETCH order_cursor INTO
+                                         :lLineNo,
+                                         :lCapsOrderNo,
+                                         :lPickLineNo,
+                                         :szStoreNo,
+                                         :szDcCode,
+                                         :szOrderConstant,
+                                         :szGroupCode,
+                                         :lStartBox,
+                                         :lEndBox,
+                                         :nOrderStatus,
+                                         :nXmitStatus,
+                                         :lCustOrderNbr,
+                                         :szPlannedPickDate;
+
+	iExists = ( iSQLError() == SQLFOUND ? TRUE : FALSE);
+
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError, "iOrderCustFetchNext Error = %d", iSQLError());
+             icrash(szError);
+	}
+	else if ( iExists )
+	{
+//		memset(order_cust,0, sizeof(order_cust));
+             StrClip(szStoreNo);
+             StrClip(szDcCode);
+             StrClip(szOrderConstant);
+             StrClip(szGroupCode);
+             StrClip(szPlannedPickDate);
+
+             order_cust->caps_order_no  = lCapsOrderNo;
+             order_cust->pickline_no    = lPickLineNo;
+             order_cust->start_box      = lStartBox;
+             order_cust->end_box        = lEndBox;
+             order_cust->order_status   = nOrderStatus;
+             order_cust->xmit_status    = nXmitStatus;
+             order_cust->cust_order_nbr = lCustOrderNbr;
+             strcpy(order_cust->store_no, szStoreNo);
+             strcpy(order_cust->dc_code, szDcCode);
+             strcpy(order_cust->ord_constant, szOrderConstant);
+             strcpy(order_cust->group_code, szGroupCode);
+             //strcpy(order_cust->planned_pick_date, "");
+             strcpy(order_cust->planned_pick_date, szPlannedPickDate);
+/*
+printf("StartBox = %d\n", order_cust->start_box);
+printf("lEndBox = %d\n", order_cust->end_box);
+printf("nOrderStatus = %d\n", order_cust->order_status);
+printf("nXmitStatus = %d\n", order_cust->xmit_status);
+printf("lCustOrderNbr = %d\n", order_cust->cust_order_nbr);
+*/
+	}
+	return(iExists);
+}
+
+
+/**************************************************************************
+		Close cursor
+**************************************************************************/
+void iOrderCustCloseCursor()
+{
+	EXEC SQL CLOSE order_cursor;
+	if ( iSQLError() < SQLFOUND )
+	{
+              char szError[256];
+              sprintf(szError, 
+                      "iOrderCustCloseCursor Close Error = %d",
+                      iSQLError());
+
+              icrash(szError);
+	}
+
+	EXEC SQL CLOSE order_cursor;
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError,
+                     "iOrderCustCloseCursor1 Free Error = %d",
+                     iSQLError());
+
+             icrash(szError);
+	}
+}
+
+/*********************************************************************
+** return true if order_cust_item exists
+*********************************************************************/
+int iSearchItem(char *skuno, long cust_order_no)
+{
+        EXEC SQL BEGIN DECLARE SECTION;
+                 char szSkuNo[2];
+                 long lCustItemNbr;
+                 long lCustOrderNbr;
+        EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+        memset(szSkuNo, 0, sizeof(szSkuNo));
+        strcpy(szSkuNo, skuno);
+
+        lCustOrderNbr = 0;
+        lCustOrderNbr = cust_order_no;
+
+        lCustItemNbr  = 0;
+
+        EXEC SQL
+        SELECT  cust_item_nbr
+        INTO    :lCustItemNbr
+        FROM    order_cust_item
+        WHERE   sku_no           = :szSkuNo
+        AND     cust_order_nbr   = :lCustOrderNbr;
+	
+	iExists = ( iSQLError() == SQLFOUND ? TRUE : FALSE);
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError, "iSearchItem Error = %d", iSQLError());
+             icrash(szError);
+	}
+	return(iExists);
+}
+
+/**************************************************************************
+		Create cursor for selecting all item data for an order
+**************************************************************************/
+int iOrderCustItemCreateCursor( long CustOrderNbr )
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long lOrderNbr;
+		SQL_CURSOR orditm_cursor;
+	EXEC SQL END DECLARE SECTION;
+
+        lOrderNbr = 0;
+        lOrderNbr = CustOrderNbr;
+//printf("ItemCreateCursor Cust order Nbr = %d\n", lOrderNbr);					
+        EXEC SQL 
+		DECLARE orditm_cursor CURSOR FOR
+			SELECT
+                        cust_order_nbr,
+                        sku_no,
+                        pick_location,
+                        descr,
+                        ordered_qty,
+                        ratio,
+                        assign_tote_id,
+                        work_code,
+                        merch_type,
+			picked_qty,
+                        actual_tote_id,
+                        picker_id,
+                        to_char(pick_datetime,'YYYY-DD-MM HH:MI:SS'),
+                        cust_item_nbr
+                        FROM order_cust_item
+                        WHERE cust_order_nbr = :lOrderNbr
+                        ORDER BY cust_item_nbr;
+
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError,
+                     "iOrderCustItemCreateCursor Declare Error = %d",
+                     iSQLError());
+             icrash(szError);
+             return(0);
+	}
+
+        EXEC SQL OPEN orditm_cursor;
+
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError,
+                     "iOrderCustItemCreateCursor Open Error = %d",
+                     iSQLError());
+             icrash(szError);
+             return(0);
+	}
+
+        return(TRUE);
+}
+
+
+/**************************************************************************
+		Fetch next row from cursor
+**************************************************************************/
+int iOrderCustItemFetchNext(struct ordercustitem *order_cust_item)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+                 long lCustOrderNbr;
+                 char szSkuNo[7];
+                 char szPickLocation[8];
+                 char szDescr[31];
+                 long lOrderedQty;
+                 long lRatio;
+                 long lAssignToteId;
+                 char szWorkCode[12];
+                 char szMerchType[2];
+                 long lPickedQty;
+                 long lActualToteId;
+                 long lPickerId;
+                 char szPickDateTime[20];
+                 long lCustItemNbr;
+	EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+//puts("in the Item fetch\n");
+        lCustOrderNbr = 0;
+        memset(szSkuNo, 0, sizeof(szSkuNo));
+        memset(szPickLocation, 0, sizeof(szPickLocation));
+        memset(szDescr, 0, sizeof(szDescr));
+        lOrderedQty   = 0;
+        lRatio        = 0;
+        lAssignToteId = 0;
+        memset(szWorkCode, 0, sizeof(szWorkCode));
+        memset(szMerchType, 0, sizeof(szMerchType));
+        lPickedQty    = 0;
+        lActualToteId = 0;
+        lPickerId     = 0;
+        memset(szPickDateTime, 0, sizeof(szPickDateTime));
+        lCustItemNbr  = 0;
+
+/*
+cust_order_nbr, sku_no, pick_location, descr, ordered_qty,
+ratio, assign_tote_id, work_code, merch_type, picked_qty,
+actual_tote_id, picker_id, pick_datetime, cust_item_nbr
+*/
+
+        EXEC SQL FETCH orditm_cursor INTO
+             :lCustOrderNbr,
+             :szSkuNo,
+             :szPickLocation,
+             :szDescr,
+             :lOrderedQty,
+             :lRatio,
+             :lAssignToteId,
+             :szWorkCode,
+             :szMerchType,
+             :lPickedQty,
+             :lActualToteId,
+             :lPickerId,
+             :szPickDateTime,
+             :lCustItemNbr;
+
+	iExists = ( iSQLError() == SQLFOUND ? TRUE : FALSE);
+	if ( iSQLError() < SQLFOUND )
+	{
+//puts("in the IF\n");
+             char szError[256];
+             sprintf(szError,
+                     "iOrderCustItemFetchNext Error = %d",
+                     iSQLError());
+             icrash(szError);
+	}
+	else if ( iExists )
+	{
+             StrClip(szSkuNo);
+             StrClip(szPickLocation);
+             StrClip(szDescr);
+             StrClip(szWorkCode);
+             StrClip(szMerchType);
+             StrClip(szPickDateTime);
+
+             //memset(order_cust_item, 0, sizeof(ordercustitem));
+		
+             order_cust_item->cust_order_nbr = lCustOrderNbr;
+             strcpy(order_cust_item->sku_no, szSkuNo);
+             strcpy(order_cust_item->pick_location, szPickLocation);
+             strcpy(order_cust_item->descr, szDescr);
+             order_cust_item->ordered_qty    = lOrderedQty;
+             order_cust_item->ratio          = lRatio;
+             order_cust_item->assign_tote_id = lAssignToteId;
+             strcpy(order_cust_item->work_code, szWorkCode);
+             strcpy(order_cust_item->merch_type, szMerchType);
+             order_cust_item->picked_qty     = lPickedQty;
+             order_cust_item->actual_tote_id = lActualToteId;
+             order_cust_item->picker_id      = lPickerId;
+             strcpy(order_cust_item->pick_datetime, szPickDateTime);
+             order_cust_item->cust_item_nbr  = lCustItemNbr;
+	}
+
+        return(iExists);
+}
+
+/**************************************************************************
+		Get a order_cust_item row
+**************************************************************************/
+/*
+int iGetRegularItem(char *sku_no, long cust_order_no,
+		 struct ordercustitem *order_item_regular )
+{
+        EXEC SQL BEGIN DECLARE SECTION;
+                 long lCustOrderNbr;
+                 char szSkuNo[2];
+                 char szPickLocation[8];
+                 char szDescr[31];
+                 long lOrderedQty;
+                 long lRatio;
+                 long lAssignToteId;
+                 char szWorkCode[12];
+                 char szMerchType[2];
+                 long lPickedQty;
+                 long lActualToteId;
+                 long lPickerId;
+                 char szPickDateTime[20];
+                 long lCustItemNbr;
+        EXEC SQL END DECLARE SECTION;
+
+	int iExists;
+
+        lCustOrderNbr  = 0;
+        lCustOrderNbr  = cust_order_no;
+        memset(szSkuNo, 0, sizeof(szSkuNo));
+        strcpy(szSkuNo, sku_no);
+
+        memset(szPickLocation, 0, sizeof(szPickLocation));
+        memset(szDescr, 0, sizeof(szDescr));
+        lOrderedQty   = 0;
+        lRatio        = 0;
+        lAssignToteId = 0;
+        memset(szWorkCode, 0, sizeof(szWorkCode));
+        memset(szMerchType, 0, sizeof(szMerchType));
+        lPickedQty    = 0;
+        lActualToteId = 0;
+        lPickerId     = 0;
+        memset(szPickDateTime, 0, sizeof(szPickDateTime));
+        lCustItemNbr  = 0;
+
+        EXEC SQL
+        SELECT
+                        cust_order_nbr,
+                        sku_no,
+                        pick_location,
+                        descr,
+                        ordered_qty,
+                        ratio,
+                        assign_tote_id,
+                        work_code,
+                        merch_type,
+                        picked_qty,
+                        actual_tote_id,
+                        picker_id,
+                        pick_datetime,
+                        cust_item_nbr
+        INTO
+                        :lCustOrderNbr,
+                        :szSkuNo,
+                        :szPickLocation,
+                        :szDescr,
+                        :lOrderedQty,
+                        :lRatio,
+                        :lAssignToteId,
+                        :szWorkCode,
+                        :szMerchType,
+                        :lPickedQty,
+                        :lActualToteId,
+                        :lPickerId,
+                        :szPickDateTime,
+                        :lCustItemNbr
+        FROM            order_cust_item
+        WHERE           sku_no           = :szSkuNo 
+        AND             cust_order_nbr   = :lCustOrderNbr;
+	
+	iExists = ( iSQLError() == SQLFOUND ? TRUE : FALSE);
+
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError, "iGetRegularItem Error = %d", iSQLError());
+             icrash(szError);
+	}
+	else if ( iExists )
+	{
+             StrClip(szSkuNo);
+             StrClip(szPickLocation);
+             StrClip(szDescr);
+             StrClip(szWorkCode);
+             StrClip(szMerchType);
+             StrClip(szPickDateTime);
+
+             memset(order_item_regular, 0, sizeof(ordercustitem));
+
+             order_item_regular->cust_order_nbr = lCustOrderNbr;
+             strcpy(order_item_regular->sku_no, szSkuNo);
+             strcpy(order_item_regular->pick_location, szPickLocation);
+             strcpy(order_item_regular->descr, szDescr);
+             order_item_regular->ordered_qty    = lOrderedQty;
+             order_item_regular->ratio          = lRatio;
+             order_item_regular->assign_tote_id = lAssignToteId;
+             strcpy(order_item_regular->work_code, szWorkCode);
+             strcpy(order_item_regular->merch_type, szMerchType);
+             order_item_regular->picked_qty     = lPickedQty;
+             order_item_regular->actual_tote_id = lActualToteId;
+             order_item_regular->picker_id      = lPickerId;
+             strcpy(order_item_regular->pick_datetime, szPickDateTime);
+             order_item_regular->cust_item_nbr  =  lCustItemNbr;
+	}
+
+        return(iExists);
+}
+
+*/
+/*********************************************************************
+** order_cust_item table update
+*********************************************************************/
+int iOrderItemUpdate(struct ordercustitem *order_cust_item)
+{
+        EXEC SQL BEGIN DECLARE SECTION;
+                 long lCustOrderNbr;
+                 char szSkuNo[2];
+                 char *pszPickLocation;
+                 char *pszDescr;
+                 long lOrderedQty;
+                 long lRatio;
+                 long lAssignToteId;
+                 char *pszWorkCode;
+                 char *pszMerchType;
+                 long lPickedQty;
+                 long lActualToteId;
+                 long lPickerId;
+                 char *pszPickDateTime;
+                 long lCustItemNbr;
+        EXEC SQL END DECLARE SECTION;
+
+        int iExists;
+
+        memset(szSkuNo, 0, sizeof(szSkuNo));
+        strcpy(szSkuNo, order_cust_item->sku_no);
+
+        lCustItemNbr    = 0;
+        lCustItemNbr    = order_cust_item->cust_item_nbr;
+
+        lCustOrderNbr   = order_cust_item->cust_order_nbr;
+        pszPickLocation = order_cust_item->pick_location;
+        pszDescr        = order_cust_item->descr;
+        lOrderedQty     = order_cust_item->ordered_qty;
+        lRatio          = order_cust_item->ratio;
+        lAssignToteId   = order_cust_item->assign_tote_id;
+        pszWorkCode     = order_cust_item->work_code;
+        pszMerchType    = order_cust_item->merch_type;
+        lPickedQty      = order_cust_item->picked_qty;
+        lActualToteId   = order_cust_item->actual_tote_id;
+        lPickerId       = order_cust_item->picker_id;
+        pszPickDateTime = order_cust_item->pick_datetime;
+
+        EXEC SQL
+        UPDATE  order_cust_item 
+        SET    cust_order_nbr = :lCustOrderNbr , 
+                pick_location = :pszPickLocation,
+                descr = :pszDescr,
+                ordered_qty = :lOrderedQty,
+                ratio = :lRatio,
+                assign_tote_id = :lAssignToteId,
+                work_code = :pszWorkCode,
+                merch_type = :pszMerchType,
+                picked_qty = :lPickedQty,
+                actual_tote_id = :lActualToteId,
+                picker_id = :lPickerId,
+                pick_datetime = :pszPickDateTime
+        WHERE   sku_no          = :szSkuNo
+        AND     cust_item_nbr   = :lCustItemNbr;
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+             char szError[256];
+             sprintf(szError, "iOrderItemUpdate Error = %d", iSQLError());
+             icrash(szError);
+	}
+
+        return(iExists);
+}
+
+
+/*********************************************************************
+** order_cust_item table update for picking
+*********************************************************************/
+int iOrderItemUpdate1(struct ordercustitem *order_cust_item)
+{
+        EXEC SQL BEGIN DECLARE SECTION;
+                 long lCustOrderNbr;
+                 char szSkuNo[2];
+                 long lPickedQty;
+                 long lActualToteId;
+                 long lPickerId;
+                 char *pszPickDateTime;
+        EXEC SQL END DECLARE SECTION;
+
+        int iExists;
+
+        memset(szSkuNo, 0, sizeof(szSkuNo));
+        strcpy(szSkuNo, order_cust_item->sku_no);
+
+        lCustOrderNbr   = 0;
+        lCustOrderNbr   = order_cust_item->cust_order_nbr;
+
+        lPickedQty      = order_cust_item->picked_qty;
+        lActualToteId   = order_cust_item->actual_tote_id;
+        lPickerId       = order_cust_item->picker_id;
+        pszPickDateTime = order_cust_item->pick_datetime;
+
+        EXEC SQL
+        UPDATE  order_cust_item 
+        SET    picked_qty = :lPickedQty,
+                actual_tote_id = :lActualToteId,
+                picker_id = :lPickerId,
+                pick_datetime = :pszPickDateTime
+        WHERE   cust_order_nbr  = :lCustOrderNbr
+        AND     sku_no          = :szSkuNo;
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+             char szError[256];
+             sprintf(szError, "iOrderItemUpdate Error = %d", iSQLError());
+             icrash(szError);
+	}
+
+        return(iExists);
+}
+
+
+/*********************************************************************
+** order_cust_item table update for split picks
+*********************************************************************/
+int iOrderItemUpdate2(struct ordercustitem *order_cust_item)
+{
+        EXEC SQL BEGIN DECLARE SECTION;
+                 long lPickedQty;
+                 long lActualToteId;
+                 long lPickerId;
+                 char *pszPickDateTime;
+                 long lCustItemNbr;
+        EXEC SQL END DECLARE SECTION;
+
+        int iExists;
+
+        lCustItemNbr   = 0;
+        lCustItemNbr   = order_cust_item->cust_item_nbr;
+
+        lPickedQty      = order_cust_item->picked_qty;
+        lActualToteId   = order_cust_item->actual_tote_id;
+        lPickerId       = order_cust_item->picker_id;
+        pszPickDateTime = order_cust_item->pick_datetime;
+
+        EXEC SQL
+        UPDATE  order_cust_item 
+        SET    picked_qty = :lPickedQty,
+                actual_tote_id = :lActualToteId,
+                picker_id = :lPickerId,
+                pick_datetime = :pszPickDateTime
+        WHERE   cust_item_nbr  = :lCustItemNbr;
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+             char szError[256];
+             sprintf(szError, "iOrderItemUpdate2 Error = %d", iSQLError());
+             icrash(szError);
+	}
+
+        return(iExists);
+}
+
+
+/*********************************************************************
+** order_cust_item table update for split picks
+*********************************************************************/
+int iOrderItemUpdate3(struct ordercustitem *order_cust_item)
+{
+        EXEC SQL BEGIN DECLARE SECTION;
+                 long lOrderedQty;
+                 long lPickedQty;
+                 long lActualToteId;
+                 long lPickerId;
+                 char *pszPickDateTime;
+                 long lCustItemNbr;
+        EXEC SQL END DECLARE SECTION;
+
+        int iExists;
+
+        lCustItemNbr   = 0;
+        lCustItemNbr   = order_cust_item->cust_item_nbr;
+
+        lOrderedQty     = order_cust_item->ordered_qty;
+        lPickedQty      = order_cust_item->picked_qty;
+        lActualToteId   = order_cust_item->actual_tote_id;
+        lPickerId       = order_cust_item->picker_id;
+        pszPickDateTime = order_cust_item->pick_datetime;
+
+        EXEC SQL
+        UPDATE  order_cust_item 
+        SET    ordered_qty = :lOrderedQty,
+                picked_qty = :lPickedQty,
+                actual_tote_id = :lActualToteId,
+                picker_id = :lPickerId,
+                pick_datetime = :pszPickDateTime
+        WHERE   cust_item_nbr  = :lCustItemNbr;
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+             char szError[256];
+             sprintf(szError, "iOrderItemUpdate3 Error = %d", iSQLError());
+             icrash(szError);
+	}
+
+        return(iExists);
+}
+
+
+/*********************************************************************
+** order_cust_item table update for special cases 
+*********************************************************************/
+int iOrderItemUpdate4(struct ordercustitem *order_cust_item)
+{
+        EXEC SQL BEGIN DECLARE SECTION;
+                 long lCustOrderNbr;
+                 char szSkuNo[2];
+                 long lPickedQty;
+                 long lActualToteId;
+                 long lPickerId;
+                 char *pszPickDateTime;
+        EXEC SQL END DECLARE SECTION;
+
+        int iExists;
+
+        memset(szSkuNo, 0, sizeof(szSkuNo));
+        strcpy(szSkuNo, order_cust_item->sku_no);
+
+        lCustOrderNbr   = 0;
+        lCustOrderNbr   = order_cust_item->cust_order_nbr;
+
+        lPickedQty      = order_cust_item->picked_qty;
+        lActualToteId   = order_cust_item->actual_tote_id;
+        lPickerId       = order_cust_item->picker_id;
+        pszPickDateTime = order_cust_item->pick_datetime;
+
+        EXEC SQL
+        UPDATE  order_cust_item 
+        SET    picked_qty = :lPickedQty,
+                actual_tote_id = :lActualToteId,
+                picker_id = :lPickerId,
+                pick_datetime = :pszPickDateTime
+        WHERE   cust_order_nbr  = :lCustOrderNbr
+        AND     sku_no          = :szSkuNo
+        AND     picked_qty      = 0
+        AND     actual_tote_id  = 0;
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+             char szError[256];
+             sprintf(szError, "iOrderItemUpdate4 Error = %d", iSQLError());
+             icrash(szError);
+	}
+
+        return(iExists);
+}
+
+
+/*********************************************************************
+** order_cust_item table update
+*********************************************************************/
+int iUpdateLateItem(long order_nbr, char *sku_no, long item_no)
+{
+        EXEC SQL BEGIN DECLARE SECTION;
+                 long lCustOrderNbr;
+                 char szSkuNo[2];
+                 long lCustItemNbr;
+        EXEC SQL END DECLARE SECTION;
+
+        int iExists;
+
+        lCustOrderNbr = 0;
+        memset(szSkuNo, 0, sizeof(szSkuNo));
+        lCustItemNbr  = 0;
+
+        lCustOrderNbr = order_nbr;
+        strcpy(szSkuNo, sku_no);
+        lCustItemNbr  = item_no;
+
+        EXEC SQL
+        UPDATE  order_cust_item 
+        SET     cust_order_nbr = :lCustOrderNbr
+        WHERE   sku_no         = :szSkuNo
+        AND     cust_item_nbr  = :lCustItemNbr;
+
+	if ( !( iExists = ( iSQLError() == SQLFOUND ) ? TRUE : FALSE ) )
+	{
+             char szError[256];
+             sprintf(szError, "iUpdateLate Error = %d", iSQLError());
+             icrash(szError);
+	}
+
+        return(iExists);
+}
+
+
+/**************************************************************************
+		Close cursor
+**************************************************************************/
+void iOrderItemCloseCursor()
+{
+	EXEC SQL CLOSE orditm_cursor;
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError,
+                     "iOrderItemCloseCursor Close Error = %d",
+                     iSQLError());
+
+             icrash(szError);
+	}
+
+	EXEC SQL CLOSE orditm_cursor;
+
+	if ( iSQLError() < SQLFOUND )
+	{
+             char szError[256];
+             sprintf(szError,
+                     "iOrderItemCloseCursor Free Error = %d",
+                     iSQLError());
+
+             icrash(szError);
+	}
+}
+/* end of order_cust.ec */

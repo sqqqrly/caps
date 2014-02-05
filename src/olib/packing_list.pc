@@ -1,0 +1,253 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Packing List Subroutines.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   |  tjt  Original implementation.
+ *  09/10/96   |  tjt  Add ref to write function.
+ *  07/23/99   |  Informix to Oracle Converstion By Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char packing_list_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+struct pl_item
+{
+   long  pl_ref;
+   long  pl_time;
+   short pl_copies;
+   short pl_pl;
+   long  pl_on;
+   short pl_zone;
+};
+struct pl_item pl_lo, pl_hi;
+long packing_list_last = 0;
+
+long packing_list_fd         = 0;
+long packing_list_open_mode  = 0;
+long packing_list_key        = 0;
+long packing_list_count      = 0;
+long packing_list_has_cursor = 0;
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403 
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+SQL_CURSOR pl_cursor1;                   /* ref key                    */
+
+EXEC SQL END DECLARE SECTION;
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+packing_list_open_o(mode)
+register long mode;
+{
+  packing_list_fd   = 1;
+
+  packing_list_open_mode  = mode;
+  packing_list_key        = 0; 
+  packing_list_count      = 0;
+  packing_list_last       = 0;
+  packing_list_has_cursor = 0;
+  packing_list_setkey_o(1);
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+packing_list_close_o()
+{
+  if (packing_list_has_cursor) packing_list_close_cursor();
+
+  packing_list_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+packing_list_close_cursor()
+{
+  if (packing_list_has_cursor)
+  {
+    EXEC SQL CLOSE :pl_cursor1;
+    if (sqlca.sqlcode) icrash("packing_list_close_cursor");
+  }
+  packing_list_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+packing_list_setkey_o(n)
+register long n;
+{
+  if (packing_list_has_cursor) packing_list_close_cursor();
+
+  packing_list_key   = 1;   
+  packing_list_count = 0;
+
+  pl_lo.pl_ref = 1;
+  pl_hi.pl_ref = 0x7fffffff;
+  
+  packing_list_last  = 0;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+packing_list_startkey_o(p)
+struct pl_item *p;
+{
+  if (packing_list_has_cursor) packing_list_close_cursor();
+
+  packing_list_count = 0;
+  
+  memcpy(&pl_lo, p, sizeof(struct pl_item));
+  memcpy(&pl_hi, p, sizeof(struct pl_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+packing_list_stopkey_o(p)
+struct pl_item *p;
+{
+  memcpy(&pl_hi, p, sizeof(struct pl_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+packing_list_read_o(p, mode)
+register struct pl_item *p;
+register long mode;
+{
+  packing_list_startkey_o(p);
+  packing_list_stopkey_o(p);
+  return packing_list_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Queue Time
+ *-------------------------------------------------------------------------*/
+packing_list_next_o(p, mode)
+struct pl_item *p;
+long mode;
+{  
+  struct pl_item work;
+  long   l_pl_ref;
+  
+  if (!packing_list_count)
+  {
+    if (packing_list_has_cursor) packing_list_close_cursor();
+  
+    EXEC SQL ALLOCATE :pl_cursor1;
+    l_pl_ref = pl_lo.pl_ref;
+
+    EXEC SQL EXECUTE
+    begin
+        packing_list_retrieve.open_cur(:pl_cursor1,:l_pl_ref);
+    end;
+    END-EXEC;     
+
+    if (sqlca.sqlcode) icrash("packing_list_open_cursor");
+
+    packing_list_has_cursor = 1;
+  }
+  packing_list_last = 0;
+
+  EXEC SQL FETCH :pl_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    packing_list_count += 1;
+    packing_list_last   = work.pl_ref;
+    memcpy(p, &work, sizeof(struct pl_item));
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    packing_list_close_cursor();
+    return 1;
+  }
+  icrash("packing_list_next");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *  A New Sequence is created for populating pl_ref and the
+ *  value from C program is Ignored. Sequence Name is packing_list_seq
+ *  and the SQL script name is packing_list_seq.sql
+ *-------------------------------------------------------------------------*/
+packing_list_write_o(p)
+struct pl_item *p;
+{
+  struct pl_item work;
+  int l_pl_ref;
+  memcpy(&work,p, sizeof(struct pl_item));
+  work.pl_time = time(0);
+
+  EXEC SQL SELECT packing_list_seq.nextval 
+           INTO   :l_pl_ref 
+           FROM   dual;
+
+  EXEC SQL INSERT INTO packing_list 
+  (pl_ref, pl_time, pl_copies, pl_pl, 
+   pl_on , pl_zone)
+  VALUES
+  (:l_pl_ref, :work.pl_time, :work.pl_copies, :work.pl_pl, 
+   :work.pl_on , :work.pl_zone);
+
+  if (sqlca.sqlcode) icrash("packing_list_write");
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+packing_list_update_o(p)
+struct pl_item *p;
+{
+  if (packing_list_last > 0)
+  {
+    struct pl_item work;
+    memcpy(&work,p,sizeof(struct pl_item));
+
+    EXEC SQL UPDATE packing_list 
+    SET  pl_time   = :work.pl_time, 
+         pl_copies = :work.pl_copies, 
+         pl_pl     = :work.pl_pl, 
+         pl_on     = :work.pl_on, 
+         pl_zone   = :work.pl_zone
+    WHERE pl_ref = :packing_list_last;
+
+    packing_list_last = 0;
+ 
+    if (sqlca.sqlcode) icrash("packing_list_update");
+  }
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+packing_list_delete_o()
+{
+  if (packing_list_last > 0)
+  {
+    EXEC SQL DELETE FROM packing_list 
+    WHERE pl_ref = :packing_list_last;
+  
+    packing_list_last = 0;
+    
+    if (sqlca.sqlcode) icrash("packing_list_delete");
+  }
+  return 0;
+}
+/* end of packing_list.ec  */

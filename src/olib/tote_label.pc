@@ -1,0 +1,252 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Tote Label Subroutines. 
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   |  tjt  Original implementation.
+ *  09/10/96   |  tjt  Add ref to write function.
+ *  07/26/99   |  Infoxmix to Oracle Conversion by Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char tote_label_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct tl_item
+{
+   long  tl_ref;
+   long  tl_time;
+   short tl_copies;
+   short tl_pl;
+   long  tl_on;
+   short tl_zone;
+};
+ struct tl_item tl_lo, tl_hi;
+ long tote_label_last = 0;
+
+long tote_label_fd         = 0;
+long tote_label_open_mode  = 0;
+long tote_label_key        = 0;
+long tote_label_count      = 0;
+long tote_label_has_cursor = 0;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+ SQL_CURSOR tl_cursor;                      /* ref key            */
+
+EXEC SQL END DECLARE SECTION;
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+tote_label_open_o(mode)
+register long mode;
+{
+  tote_label_fd   = 1;
+
+  tote_label_open_mode  = mode;
+  tote_label_key        = 0; 
+  tote_label_count      = 0;
+  tote_label_last       = 0;
+  tote_label_has_cursor = 0;
+  tote_label_setkey_o(1);
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+tote_label_close_o()
+{
+  if (tote_label_has_cursor) tote_label_close_cursor();
+
+  tote_label_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+tote_label_close_cursor()
+{
+  if (tote_label_has_cursor)
+  {
+    EXEC SQL CLOSE :tl_cursor;
+    if (sqlca.sqlcode) icrash("tote_label close_cursor");
+  }
+  tote_label_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+tote_label_setkey_o(n)
+register long n;
+{
+  if (tote_label_has_cursor) tote_label_close_cursor();
+
+  tote_label_key   = 1;   
+  tote_label_count = 0;
+
+  tl_lo.tl_ref = 1;
+  tl_hi.tl_ref = 0x7fffffff;
+  
+  tote_label_last  = 0;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+tote_label_startkey_o(p)
+struct tl_item *p;
+{
+  if (tote_label_has_cursor) tote_label_close_cursor();
+
+  tote_label_count = 0;
+  
+  memcpy(&tl_lo, p, sizeof(struct tl_item));
+  memcpy(&tl_hi, p, sizeof(struct tl_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+tote_label_stopkey_o(p)
+struct tl_item *p;
+{
+  memcpy(&tl_hi, p, sizeof(struct tl_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+tote_label_read_o(p, mode)
+register struct tl_item *p;
+register long mode;
+{
+  tote_label_startkey_o(p);
+  tote_label_stopkey_o(p);
+  return tote_label_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Reference Number
+ *-------------------------------------------------------------------------*/
+tote_label_next_o(p, mode)
+register struct tl_item *p;
+register long mode;
+{  
+  struct tl_item work;
+  int l_tl_ref;
+
+  if (!tote_label_count)
+  {
+    if (tote_label_has_cursor) tote_label_close_cursor();
+
+    EXEC SQL ALLOCATE :tl_cursor;
+
+    EXEC SQL EXECUTE   
+    begin
+      tote_label_retrieve.open_cur(:tl_cursor,:l_tl_ref);
+    end;
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("tote_label open_cursor");
+
+    tote_label_has_cursor = 1;
+   
+  }
+  tote_label_last = 0;
+
+  EXEC SQL FETCH :tl_cursor INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    tote_label_count += 1;
+    tote_label_last   = work.tl_ref;
+    memcpy(p, &work, sizeof(struct tl_item));
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    tote_label_close_cursor();
+    return 1;
+  }
+  icrash("tote_label next");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *  A New Sequence is created for populating tl_ref and the
+ *  value from C program is Ignored. Sequence Name is tote_label_seq
+ *  and the SQL script name is tote_label_seq.sql
+ *-------------------------------------------------------------------------*/
+tote_label_write_o(p)
+struct tl_item *p;
+{
+  struct tl_item work;
+  int l_tl_ref;
+  p->tl_time = time(0);
+  memcpy(&work,p,sizeof(struct tl_item));
+
+  EXEC SQL SELECT tote_label_seq.nextval 
+           INTO   :l_tl_ref 
+           FROM   dual;
+  
+  EXEC SQL INSERT INTO tote_label
+  (tl_ref , tl_time, tl_copies, tl_pl, 
+   tl_on  , tl_zone )
+  VALUES
+  (:l_tl_ref, :work.tl_time, :work.tl_copies, :work.tl_pl, 
+   :work.tl_on,  :work.tl_zone);
+
+  if (sqlca.sqlcode) icrash("tote_labe1l write");
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+tote_label_update_o(p)
+struct tl_item *p;
+{
+  struct tl_item work;
+  if (tote_label_last > 0)
+  {
+    memcpy(&work,p,sizeof(struct tl_item));
+    EXEC SQL UPDATE tote_label 
+    SET tl_time   = :work.tl_time, 
+        tl_copies = :work.tl_copies, 
+        tl_pl     = :work.tl_pl, 
+        tl_on     = :work.tl_on, 
+        tl_zone   = :work.tl_zone 
+    WHERE tl_ref = :tote_label_last;
+
+    tote_label_last = 0;
+    if (sqlca.sqlcode) icrash("tote_labe1 update");
+  }
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+tote_label_delete_o()
+{
+  if (tote_label_last > 0)
+  {
+    EXEC SQL DELETE FROM tote_label 
+    WHERE tl_ref = :tote_label_last;
+
+    tote_label_last = 0;
+    if (sqlca.sqlcode) icrash("tote_label delete");
+  }
+  return 0;
+}
+/* end of tote_label.ec  */

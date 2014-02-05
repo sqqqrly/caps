@@ -1,0 +1,385 @@
+
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    File Subroutines.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  08/06/99   |  rvj  Original implementation.
+ *  09/28/99   |  Ravi Jagannathan for Informix to Oracle Conversion
+ *-------------------------------------------------------------------------*/
+#define SQLNOTFOUND 1403
+
+EXEC SQL INCLUDE SQLCA;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+ SQL_CURSOR group_cursor0;           /* no key update                */
+ SQL_CURSOR group_cursor1;           /* group                         */
+
+EXEC SQL END DECLARE SECTION;
+
+static char group_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+struct g_item
+{
+   char  g_group[6];
+   long g_goodcarton;
+   long g_badcarton;
+   short g_status;
+};
+struct g_item2
+{
+   char  g_group[7];
+   long g_goodcarton;
+   long g_badcarton;
+   short g_status;
+};
+struct g_item g_lo, g_hi;
+
+long group_fd         = 0;
+long group_open_mode  = 0;
+long group_key        = 0;
+long group_count      = 0;
+long group_last       = 0;
+long group_has_cursor = -1;
+
+
+
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+group_open_o(mode)
+long mode;
+{
+  group_fd = 1;
+
+  group_open_mode  = mode;
+  group_key        = 0;
+  group_count      = 0;
+  group_last       = 0;
+  group_has_cursor = -1;
+  group_setkey_o(0);
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Open Cursor
+ *-------------------------------------------------------------------------*/
+/*group_open_cursor()
+{
+  if (group_has_cursor >= 0) group_close_cursor();
+
+  switch (group_key)
+  {
+    case 0:
+
+          EXEC SQL ALLOCATE :group_cursor0;
+
+          EXEC SQL EXECUTE 
+             begin
+               group_retrieve.open_cur0(:group_cursor0);
+             end;       
+          END-EXEC;
+          if (sqlca.sqlcode) icrash("group_open_cursor 0");
+          break;
+    case 1:
+          EXEC SQL ALLOCATE :group_cursor1;
+
+          EXEC SQL EXECUTE 
+             begin
+               group_retrieve.open_cur1(:group_cursor1);
+             end;       
+          END-EXEC;
+          if (sqlca.sqlcode) icrash("group_open_cursor 1");
+          break;
+            
+  }
+  group_has_cursor = group_key;
+}*/
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+group_close_o()
+{
+  if (group_has_cursor >= 0) group_close_cursor();
+
+  group_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+group_close_cursor()
+{
+  if (group_has_cursor >= 0)
+  {
+    switch (group_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE :group_cursor0;
+              if (sqlca.sqlcode) icrash("group_close_cursor 0");
+              break;
+      case 1:
+              EXEC SQL CLOSE :group_cursor1;
+              if (sqlca.sqlcode) icrash("group_close_cursor 1");
+              break;
+    }
+  }
+  group_has_cursor = -1;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+group_setkey_o(n)
+long n;
+{
+  if (group_has_cursor >= 0) group_close_cursor();
+
+  group_key   = n < 0 || n > 3 ? 0 : n;   
+  group_count = 0;
+  group_last  = 0;
+  
+  memset(g_lo.g_group, 0x20, 6);
+  memset(g_hi.g_group, 0x7f, 6);
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+group_startkey_o(p)
+struct g_item *p;
+{
+  if (group_has_cursor >= 0) group_close_cursor();
+
+  if (group_key > 3) group_key -= 4;
+  
+  group_count = 0;
+  group_last  = 0;
+  
+  memcpy(&g_lo, p, sizeof(struct g_item));
+  memcpy(&g_hi, p, sizeof(struct g_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+group_stopkey_o(p)
+struct g_item *p;
+{
+  memcpy(&g_hi, p, sizeof(struct g_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+group_read_o(p, mode)
+struct g_item *p;
+long mode;
+{
+  group_startkey_o(p);
+  group_stopkey_o(p);
+  return group_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *-------------------------------------------------------------------------*/
+group_next_o(p, mode)
+struct g_item *p;
+long mode;
+{  
+  /*if (group_count <= 0)
+  {
+    if (!(group_open_mode & mode)) group_key += 4;
+  }*/
+  switch (group_key)
+  {
+    case 0:  return group_next0(p);
+    case 1:  return group_next1(p);
+  }
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key For Update
+ *-------------------------------------------------------------------------*/
+group_next0(p)
+struct g_item *p;
+{  
+ struct g_item2 work2;
+  
+  if (!group_count)
+  {
+     if (group_has_cursor >= 0) group_close_cursor();
+
+     EXEC SQL ALLOCATE :group_cursor0;
+
+     EXEC SQL EXECUTE 
+     begin
+        group_retrieve.open_cur0(:group_cursor0);
+     end;       
+     END-EXEC;
+
+     group_has_cursor = group_key;
+
+     if (sqlca.sqlcode) icrash("group_open_cursor 0");
+  }
+  group_last = 0;
+  
+  EXEC SQL FETCH :group_cursor0
+           INTO  :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    group_count += 1;
+    group_last = 1;
+    group_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("group_next 0");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On group
+ *-------------------------------------------------------------------------*/
+group_next1(p)
+struct g_item *p;
+{  
+  struct g_item2 work2;
+  char  lg_group[7];
+  memcpy(lg_group,p->g_group,6);
+  lg_group[6]='\0';
+  if (!group_count)
+  {
+    if (group_has_cursor >= 0) group_close_cursor();
+
+    EXEC SQL ALLOCATE :group_cursor1;
+
+    EXEC SQL EXECUTE 
+    begin
+        group_retrieve.open_cur1(:group_cursor1,:lg_group);
+    end;       
+    END-EXEC;
+    group_has_cursor = group_key;
+  }
+  group_last = 0;
+  
+  EXEC SQL FETCH  :group_cursor1
+           INTO   :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    group_count += 1;
+    group_last = 1;
+    group_copy(p, &work2);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("group_next 1");
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field
+ *-------------------------------------------------------------------------*/
+group_copy(p, q)
+struct g_item  *p;
+struct g_item2 *q;
+{
+  memcpy(p->g_group,    q->g_group,    6);
+  p->g_goodcarton     = q->g_goodcarton;
+  p->g_badcarton      = q->g_badcarton;
+  p->g_status         = q->g_status;
+  
+  return 0;
+}
+group_copy_reverse(p, q)
+struct g_item  *p;
+struct g_item2 *q;
+{
+  memcpy(q->g_group,   p->g_group,    6);
+  q->g_goodcarton   = p->g_goodcarton;
+  q->g_badcarton    = p->g_badcarton;
+  q->g_status       = p->g_status;
+  q->g_group[6]='\0';
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+group_write_o(p)
+struct g_item *p;
+{
+  struct g_item2 new;
+
+  group_copy_reverse(p,&new);
+
+  EXEC SQL INSERT INTO groups
+  ( g_group ,    g_goodcarton,
+    g_badcarton, g_status)
+  VALUES (
+    :new.g_group    ,:new.g_goodcarton,
+    :new.g_badcarton,:new.g_status);
+  
+  if (sqlca.sqlcode) icrash("group_write");
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+group_update_o(p)
+struct g_item *p;
+{
+  struct g_item2 new;
+
+  if (group_last > 0)
+  {
+    group_copy_reverse(p,&new);
+    group_last = 0;
+    new.g_group[7]='\0';
+    EXEC SQL UPDATE groups 
+    SET  g_goodcarton = :new.g_goodcarton,
+         g_badcarton  = :new.g_badcarton,
+         g_status     = :new.g_status
+    WHERE g_group = :new.g_group;
+
+    if (sqlca.sqlcode) icrash("group_update");
+    return 0;
+
+   }
+  krash("group_update", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+group_delete_o(p)
+struct g_item *p;
+{
+  struct g_item2 new;
+
+  if (group_last > 0)
+  {
+    group_copy_reverse(p,&new);
+    group_last = 0;
+
+    EXEC SQL DELETE FROM groups 
+             WHERE  g_group = :new.g_group;
+    if (sqlca.sqlcode) icrash("group_delete");
+  }
+  krash("group_delete", "no active record", 1);
+  return 0;
+}
+
+/* end of group.pc  */
+
+

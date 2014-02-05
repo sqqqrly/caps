@@ -1,0 +1,331 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Short Notice Subroutines.
+ *
+ *  Note:           Has only one serial key.  Uses a normal cursor to
+ *                  retrieve records in order.  No locking is used.  Only
+ *                  one process is allowed to delete particular records.
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   |  tjt  Original implementation.
+ *  07/26/99   |  Informix to Oracle Conversion by Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char short_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct sh_item
+{
+   long  sh_ref;
+   long  sh_time;
+   short sh_pl;
+   long  sh_on;
+   short sh_mod;
+   short sh_ordered;
+   short sh_picked;
+   short sh_remaining;
+   long  sh_picker;
+   char  sh_split[1];
+   char  sh_con[15];
+   char  sh_grp[6];
+};
+struct sh_item2
+{
+   long  sh_ref;
+   long  sh_time;
+   short sh_pl;
+   long  sh_on;
+   short sh_mod;
+   short sh_ordered;
+   short sh_picked;
+   short sh_remaining;
+   long  sh_picker;
+   char  sh_split[2];
+   char  sh_con[16];
+   char  sh_grp[7];
+};
+ struct sh_item sh_lo, sh_hi;
+ long short_last = 0;
+
+long short_fd         = 0;
+long short_open_mode  = 0;
+long short_key        = 0;
+long short_count      = 0;
+long short_has_cursor = 0;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+  SQL_CURSOR sh_cursor1;                     /* ref key    */
+
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+short_open_o(mode)
+register long mode;
+{
+  short_fd   = 1;
+
+  short_open_mode  = mode;
+  short_key        = 0; 
+  short_count      = 0;
+  short_last       = 0;
+  short_has_cursor = 0;
+  short_setkey_o(1);
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+short_close_o()
+{
+  if (short_has_cursor) short_close_cursor();
+
+  short_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+short_close_cursor()
+{
+  if (short_has_cursor)
+  {
+    EXEC SQL CLOSE :sh_cursor1;
+    if (sqlca.sqlcode) icrash("short_close_cursor");
+  }
+  short_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+short_setkey_o(n)
+register long n;
+{
+  if (short_has_cursor) short_close_cursor();
+
+  short_key   = 1;   
+  short_count = 0;
+
+  sh_lo.sh_ref = 1;
+  sh_hi.sh_ref = 0x7fffffff;
+  
+  short_last   = 0;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+short_startkey_o(p)
+struct sh_item *p;
+{
+  if (short_has_cursor) short_close_cursor();
+
+  short_count = 0;
+  
+  memcpy(&sh_lo, p, sizeof(struct sh_item));
+  memcpy(&sh_hi, p, sizeof(struct sh_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+short_stopkey_o(p)
+struct sh_item *p;
+{
+  memcpy(&sh_hi, p, sizeof(struct sh_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+short_read_o(p, mode)
+register struct sh_item *p;
+register long mode;
+{
+  short_startkey_o(p);
+  short_stopkey_o(p);
+  return short_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Queue Time
+ *-------------------------------------------------------------------------*/
+short_next_o(p, mode)
+register struct sh_item *p;
+register long mode;
+{  
+  struct sh_item2 work;
+  int l_sh_ref;
+  
+  if (!short_count)
+  {
+    if (short_has_cursor) short_close_cursor();
+
+    l_sh_ref = sh_lo.sh_ref;
+    EXEC SQL ALLOCATE :sh_cursor1;
+
+    EXEC SQL EXECUTE
+    begin
+         short_retrieve.open_cur(:sh_cursor1,:l_sh_ref);
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("short_open_cursor");
+
+    short_has_cursor = 1;
+  }
+  short_last = 0;
+
+  EXEC SQL FETCH :sh_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    short_count += 1;
+    short_last   = work.sh_ref;
+    short_copy(p, &work);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    short_close_cursor();
+    return 1;
+  }
+  icrash("short_next");
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field
+ *-------------------------------------------------------------------------*/
+short_copy(p, q)
+register struct sh_item  *p;
+register struct sh_item2 *q;
+{
+  p->sh_ref       = q->sh_ref;
+  p->sh_time      = q->sh_time;
+  p->sh_pl        = q->sh_pl;
+  p->sh_on        = q->sh_on;
+  p->sh_mod       = q->sh_mod;
+  p->sh_ordered   = q->sh_ordered;
+  p->sh_picked    = q->sh_picked;
+  p->sh_remaining = q->sh_remaining;
+  p->sh_picker    = q->sh_picker;
+
+  memcpy(p->sh_split, q->sh_split, 1);
+  memcpy(p->sh_con,   q->sh_con,  15);
+  memcpy(p->sh_grp,   q->sh_grp,   7);
+  
+  return 0;
+}
+short_copy_reverse(p, q)
+register struct sh_item  *p;
+register struct sh_item2 *q;
+{
+  q->sh_ref       = p->sh_ref;
+  q->sh_time      = p->sh_time;
+  q->sh_pl        = p->sh_pl;
+  q->sh_on        = p->sh_on;
+  q->sh_mod       = p->sh_mod;
+  q->sh_ordered   = p->sh_ordered;
+  q->sh_picked    = p->sh_picked;
+  q->sh_remaining = p->sh_remaining;
+  q->sh_picker    = p->sh_picker;
+
+  memcpy(q->sh_split, p->sh_split, 1);
+  q->sh_split[1]='\0';
+  memcpy(q->sh_con,   p->sh_con,  15);
+  q->sh_con[15]='\0';
+  memcpy(q->sh_grp,   p->sh_grp,   7);
+  q->sh_grp[7]='\0';
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *  A New Sequence is created for populating sh_ref and the
+ *  value from C program is Ignored. Sequence Name is short_seq
+ *  and the SQL script name is short_seq.sql
+ *-------------------------------------------------------------------------*/
+short_write_o(p)
+struct sh_item *p;
+{
+  struct sh_item2 work;
+  int l_sh_ref; 
+  p->sh_time = time(0);
+  short_copy_reverse(p,&work);
+
+  EXEC SQL SELECT short_seq.nextval 
+           INTO   :l_sh_ref 
+           FROM   dual;
+
+  EXEC SQL INSERT INTO short_notice
+  (sh_ref    , sh_time   , sh_pl    , sh_on, 
+   sh_mod    , sh_ordered, sh_picked, sh_remaining, 
+   sh_picker , sh_split  , sh_con   , sh_grp)
+  VALUES
+  (:l_sh_ref   , :work.sh_time   , :work.sh_pl    , :work.sh_on, 
+   :work.sh_mod   , :work.sh_ordered, :work.sh_picked, :work.sh_remaining, 
+   :work.sh_picker, :work.sh_split  , :work.sh_con   , :work.sh_grp);
+   
+  if (sqlca.sqlcode) icrash("short_write");
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+short_update_o(p)
+struct sh_item *p;
+{
+  struct sh_item2 work;
+  if (short_last > 0)
+  {
+    short_copy_reverse(p,&work);
+    EXEC SQL UPDATE short_notice 
+    set sh_time      = :work.sh_time, 
+        sh_pl        = :work.sh_pl, 
+        sh_on        = :work.sh_on, 
+        sh_mod       = :work.sh_mod,  
+        sh_ordered   = :work.sh_ordered, 
+        sh_picked    = :work.sh_picked,
+        sh_remaining = :work.sh_remaining, 
+        sh_picker    = :work.sh_picker, 
+        sh_split     = :work.sh_split, 
+        sh_con       = :work.sh_con, 
+        sh_grp       = :work.sh_grp
+    WHERE sh_ref     = :short_last;
+
+    short_last = 0;
+ 
+    if (sqlca.sqlcode) icrash("short_update");
+  }
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+short_delete_o()
+{
+  if (short_last > 0)
+  {
+    EXEC SQL DELETE FROM short_notice 
+    WHERE sh_ref = :short_last;
+  
+    short_last = 0;
+    
+    if (sqlca.sqlcode) icrash("short_delete");
+  }
+  return 0;
+}
+/* end of short.ec  */

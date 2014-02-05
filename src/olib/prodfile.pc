@@ -1,0 +1,445 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Product File Subroutines.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/07/95   |  tjt  Original implementation.
+ *  07/27/99   |  Informix to Oracle Conversion ravi jagannathan.
+ *-------------------------------------------------------------------------*/
+static char prodfile_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+#define SQLNOTFOUND 1403
+
+struct pf_item
+{
+   char  pfsku[15];
+   char  descr[25];
+   char  fgroup[5];
+   char  um[3];
+   short ipqty;
+   short cpack;
+   char  bsloc[6];
+   char  absloc[6];
+   char  altid[25];
+};
+struct pf_item2
+{
+   char  pfsku[16];
+   char  descr[26];
+   char  fgroup[6];
+   char  um[4];
+   short ipqty;
+   short cpack;
+   char  bsloc[7];
+   char  absloc[7];
+   char  altid[26];
+};
+struct pf_item pf_lo, pf_hi;
+
+long prodfile_fd         = 0;
+long prodfile_open_mode  = 0;
+long prodfile_key        = 0;
+long prodfile_count      = 0;
+long prodfile_last       = 0;
+long prodfile_has_cursor = -1;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+SQL_CURSOR prodfile_cursor0;            /* no key           */
+SQL_CURSOR prodfile_cursor1;            /* sku key          */
+SQL_CURSOR prodfile_cursor2;            /* group key        */
+
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+prodfile_open_o(mode)
+register long mode;
+{
+  prodfile_fd = 1;
+ 
+  prodfile_open_mode  = mode;
+  prodfile_key        = 0;
+  prodfile_count      = 0;
+  prodfile_last       = 0;
+  prodfile_has_cursor = -1;
+  prodfile_setkey_o(0);
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+prodfile_close_o()
+{
+  if (prodfile_has_cursor >= 0) prodfile_close_cursor();
+
+  prodfile_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+prodfile_close_cursor()
+{
+  if (prodfile_has_cursor >= 0)
+  {
+    switch (prodfile_has_cursor)
+    {
+      case 0:
+             EXEC SQL CLOSE :prodfile_cursor0;
+             if (sqlca.sqlcode) icrash("prodfile_close_cursor 0");
+              break;
+      case 1:
+             EXEC SQL CLOSE :prodfile_cursor1;
+             if (sqlca.sqlcode) icrash("prodfile_close_cursor 1");
+              break;
+      case 2:
+             EXEC SQL CLOSE :prodfile_cursor2;
+             if (sqlca.sqlcode) icrash("prodfile_close_cursor 2");
+              break;
+    }
+  }
+  prodfile_has_cursor = -1;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+prodfile_setkey_o(n)
+register long n;
+{
+  if (prodfile_has_cursor >= 0) prodfile_close_cursor();
+
+  prodfile_key   = n < 0 || n > 2 ? 0 : n;   
+  prodfile_count = 0;
+  prodfile_last  = 0;
+  
+  memset(pf_lo.pfsku, 0x20, 15);
+  memset(pf_lo.fgroup, 0x20, 5);
+
+  memset(pf_hi.pfsku, 'z', 15);
+  memset(pf_hi.fgroup, 'z', 5);
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+prodfile_startkey_o(p)
+struct pf_item *p;
+{
+  if (prodfile_has_cursor >= 0) prodfile_close_cursor();
+
+  if (prodfile_key > 2) prodfile_key -= 3;
+  
+  prodfile_count = 0;
+  prodfile_last  = 0;
+  
+  memcpy(&pf_lo, p, sizeof(struct pf_item));
+  memcpy(&pf_hi, p, sizeof(struct pf_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+prodfile_stopkey_o(p)
+struct pf_item *p;
+{
+  memcpy(&pf_hi, p, sizeof(struct pf_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+prodfile_read_o(p, mode)
+register struct pf_item *p;
+register long mode;
+{
+  prodfile_startkey_o(p);
+  prodfile_stopkey_o(p);
+  return prodfile_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *-------------------------------------------------------------------------*/
+prodfile_next_o(p, mode)
+register struct pf_item *p;
+register long mode;
+{  
+  switch (prodfile_key)
+  {
+    case 0:  return prodfile_next0(p);
+    case 1:  return prodfile_next1(p);
+    case 2:  return prodfile_next2(p);
+  }
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row on no key
+ *-------------------------------------------------------------------------*/
+prodfile_next0(p)
+register struct pf_item *p;
+{  
+  struct pf_item2 work2;
+  
+  if (!prodfile_count)
+  {
+    if (prodfile_has_cursor >= 0) prodfile_close_cursor();
+
+    EXEC SQL ALLOCATE :prodfile_cursor0;
+
+    EXEC SQL EXECUTE
+    begin
+
+      prodfile_retrieve.open_cur0(:prodfile_cursor0);
+    
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("prodfile_next0 open");
+  
+    if (sqlca.sqlcode) icrash("prodfile_next0 open");
+
+    prodfile_has_cursor = prodfile_key;
+  }
+  prodfile_last = 0;
+  
+  EXEC SQL FETCH :prodfile_cursor0 INTO :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    prodfile_count += 1;
+    prodfile_copy(p, &work2);
+    prodfile_last = 1;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("prodfile_next0 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On SKU 
+ *-------------------------------------------------------------------------*/
+prodfile_next1(p)
+register struct pf_item *p;
+{  
+ struct pf_item2 new;
+ char  l_pf_sku[16]; 
+  if (!prodfile_count)
+  {
+    if (prodfile_has_cursor >= 0) prodfile_close_cursor();
+
+    EXEC SQL ALLOCATE :prodfile_cursor1;
+
+    memcpy(l_pf_sku,p->pfsku,15);
+    l_pf_sku[15]='\0'; 
+    EXEC SQL EXECUTE
+    begin
+      prodfile_retrieve.open_cur1(:prodfile_cursor1,:l_pf_sku);
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("prodfile_next1 open");
+    prodfile_has_cursor = prodfile_key;
+  }
+  prodfile_last = 0;
+  
+  EXEC SQL FETCH :prodfile_cursor1 INTO :new;
+  if (sqlca.sqlcode == 0)
+  {
+    prodfile_count += 1;
+    prodfile_copy(p, &new);
+    prodfile_last = 1;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("prodfile_next1 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Group 
+ *-------------------------------------------------------------------------*/
+prodfile_next2(p)
+register struct pf_item *p;
+{  
+  struct pf_item2 new;
+  char l_fgroup[6];
+
+  if (!prodfile_count)
+  {
+    if (prodfile_has_cursor >= 0) prodfile_close_cursor();
+
+    EXEC SQL ALLOCATE :prodfile_cursor2;
+    memcpy(l_fgroup,p->fgroup,5);
+    l_fgroup[5]='\0';
+ 
+    EXEC SQL EXECUTE
+    begin
+      prodfile_retrieve.open_cur2(:prodfile_cursor2,:l_fgroup);
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("prodfile_next2 open");
+
+    prodfile_has_cursor = prodfile_key;
+  }
+  prodfile_last = 0;
+  
+  EXEC SQL FETCH :prodfile_cursor2 INTO :new;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    prodfile_count += 1;
+    prodfile_copy(p, &new);
+    prodfile_last = 1;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("prodfile_next2 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field
+ *-------------------------------------------------------------------------*/
+prodfile_copy(p, q)
+struct pf_item  *p;
+struct pf_item2 *q;
+{   
+   
+  p->ipqty = q->ipqty;
+  p->cpack = q->cpack;
+   
+  memcpy(p->pfsku,  q->pfsku, 15);
+  memcpy(p->descr,  q->descr, 25);
+  memcpy(p->fgroup, q->fgroup, 5);
+  memcpy(p->um,     q->um,     3);
+  memcpy(p->bsloc,  q->bsloc,  6);
+  memcpy(p->absloc, q->absloc, 6);
+  memcpy(p->altid,  q->altid, 25);
+
+  return 0;
+}
+prodfile_copy_reverse(p, q)
+struct pf_item  *p;
+struct pf_item2 *q;
+{   
+   
+  q->ipqty = p->ipqty;
+  q->cpack = p->cpack;
+   
+  memcpy(q->pfsku,  p->pfsku, 15);
+  memcpy(q->descr,  p->descr, 25);
+  memcpy(q->fgroup, p->fgroup, 5);
+  memcpy(q->um,     p->um,     3);
+  memcpy(q->bsloc,  p->bsloc,  6);
+  memcpy(q->absloc, p->absloc, 6);
+  memcpy(q->altid,  p->altid, 25);
+
+  q->pfsku[15]='\0';
+  q->descr[25]='\0';
+  q->fgroup[5]='\0';
+  q->um[3]='\0';
+  q->bsloc[6]='\0';
+  q->absloc[6]='\0';
+  q->altid[25]='\0';
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+prodfile_write_o(p)
+register struct pf_item *p;
+{
+  struct pf_item2 work;
+  prodfile_copy_reverse(p,&work);  
+
+  EXEC SQL INSERT INTO prodfile (
+  pfsku,descr ,fgroup  ,um    ,
+  ipqty,cpack ,bsloc   ,absloc,
+  altid )
+  values (:work.pfsku,:work.descr,:work.fgroup,:work.um,
+          :work.ipqty,:work.cpack,:work.bsloc ,:work.absloc,
+          :work.altid);
+
+  if (sqlca.sqlcode) icrash("prodfile_write");
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+prodfile_update_o(p)
+register struct pf_item *p;
+{
+  struct pf_item2 work;
+
+  if (prodfile_last)
+  {
+    prodfile_copy_reverse(p,&work);  
+    prodfile_last = 0;
+    EXEC SQL UPDATE prodfile
+    SET pfsku = :work.pfsku,
+        descr = :work.descr,
+        fgroup= :work.fgroup,
+        um    = :work.um,
+        ipqty = :work.ipqty,
+        cpack = :work.cpack,
+        bsloc = :work.bsloc,
+        absloc= :work.absloc,
+        altid = :work.altid
+    WHERE pfsku= :work.pfsku;
+
+    if (sqlca.sqlcode) icrash("prodfile_update");
+    return 0;
+  }
+  krash("prodfile_update", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+prodfile_delete_o(p)
+register struct pf_item *p;
+{
+  char l_pfsku[16];
+  if (prodfile_last)
+  {
+    memcpy(l_pfsku,p->pfsku,15);
+    l_pfsku[15]='\0';
+
+    prodfile_last = 0;
+    EXEC SQL DELETE FROM prodfile
+    WHERE pfsku = :l_pfsku; 
+    return 0;
+  }
+  krash("prodfile_delete", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Same As Update
+ *-------------------------------------------------------------------------*/
+prodfile_replace(p)
+register struct pf_item *p;
+{
+  return prodfile_update_o(p);
+}
+/*-------------------------------------------------------------------------*
+ *  Product File Unlock
+ *-------------------------------------------------------------------------*/
+prodfile_unlock()
+{
+  return 0;
+}
+
+/* end of prodfile.ec  */
+
+

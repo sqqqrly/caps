@@ -1,0 +1,247 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Restock Notice Subroutines.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   |  tjt  Original implementation.
+ *-------------------------------------------------------------------------*/
+static char restock_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct rs_item
+{
+   long  rs_ref;
+   long  rs_time;
+   short rs_pl;
+   short rs_mod;
+   long  rs_number;
+   short rs_quantity;
+
+};
+
+struct rs_item rs_lo, rs_hi;
+long restock_last = 0;
+
+long restock_fd         = 0;
+long restock_open_mode  = 0;
+long restock_key        = 0;
+long restock_count      = 0;
+long restock_has_cursor = 0;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+SQL_CURSOR rs_cursor1;               /* ref key     */
+
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+restock_open_o(mode)
+register long mode;
+{
+  restock_fd   = 1;
+
+  restock_open_mode  = mode;
+  restock_key        = 0; 
+  restock_count      = 0;
+  restock_last       = 0;
+  restock_has_cursor = 0;
+  restock_setkey_o(1);
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+restock_close_o()
+{
+  if (restock_has_cursor) restock_close_cursor();
+
+  restock_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+restock_close_cursor()
+{
+  if (restock_has_cursor)
+  {
+    EXEC SQL CLOSE :rs_cursor1;
+    if (sqlca.sqlcode) icrash("restock_close_cursor");
+  }
+  restock_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+restock_setkey_o(n)
+register long n;
+{
+  if (restock_has_cursor) restock_close_cursor();
+
+  restock_key   = 1;   
+  restock_count = 0;
+
+  rs_lo.rs_ref  = 1;
+  rs_hi.rs_ref  = 0x7fffffff;
+  
+  restock_last  = 0;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+restock_startkey_o(p)
+struct rs_item *p;
+{
+  if (restock_has_cursor) restock_close_cursor();
+
+  restock_count = 0;
+  
+  memcpy(&rs_lo, p, sizeof(struct rs_item));
+  memcpy(&rs_hi, p, sizeof(struct rs_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+restock_stopkey_o(p)
+struct rs_item *p;
+{
+  memcpy(&rs_hi, p, sizeof(struct rs_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+restock_read_o(p, mode)
+register struct rs_item *p;
+register long mode;
+{
+  restock_startkey_o(p);
+  restock_stopkey_o(p);
+  return restock_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Queue Time
+ *-------------------------------------------------------------------------*/
+restock_next_o(p, mode)
+register struct rs_item *p;
+register long mode;
+{  
+  struct rs_item work;
+  int l_rs_ref;
+  
+  if (!restock_count)
+  {
+   if (restock_has_cursor) restock_close_cursor();
+
+   EXEC SQL ALLOCATE :rs_cursor1;
+   l_rs_ref=p->rs_ref;
+
+   EXEC SQL EXECUTE
+   begin
+       restock_retrieve.open_cur(:rs_cursor1,:l_rs_ref);
+   end;
+   END-EXEC;
+
+   if (sqlca.sqlcode) icrash("restock_open_cursor");
+
+   restock_has_cursor = 1;
+
+  }
+  restock_last = 0;
+
+  EXEC SQL FETCH  :rs_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    restock_count += 1;
+    restock_last   = work.rs_ref;
+    memcpy(p, &work, sizeof(struct rs_item));
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    restock_close_cursor();
+    return 1;
+  }
+  icrash("restock_next");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+restock_write_o(p)
+struct rs_item *p;
+{
+  struct rs_item work;
+  p->rs_time = time(0);
+  memcpy(&work, p,sizeof(struct rs_item));
+
+  EXEC SQL INSERT INTO restock_notice
+  (rs_ref   , rs_time    , rs_pl,  rs_mod, 
+   rs_number, rs_quantity)
+  VALUES
+  (:work.rs_ref   , :work.rs_time   , :work.rs_pl, :work.rs_mod, 
+   :work.rs_number, :work.rs_quantity);
+   
+  if (sqlca.sqlcode) icrash("restock_write");
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+restock_update_o(p)
+struct rs_item *p;
+{
+  struct rs_item work;
+  if (restock_last > 0)
+  {
+    EXEC SQL UPDATE restock_notice 
+    SET rs_time      = :work.rs_time, 
+        rs_pl        = :work.rs_pl , 
+        rs_mod       = :work.rs_mod, 
+        rs_number    = :work.rs_number, 
+        rs_quantity  = :work.rs_quantity
+    WHERE rs_ref = :restock_last;
+
+    restock_last = 0;
+ 
+    if (sqlca.sqlcode) icrash("restock_update");
+  }
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+restock_delete_o()
+{
+  if (restock_last > 0)
+  {
+    EXEC SQL DELETE FROM restock_notice 
+    WHERE  rs_ref = :restock_last;
+  
+    restock_last = 0;
+    
+    if (sqlca.sqlcode) icrash("restock_delete");
+  }
+  return 0;
+}
+
+/* end of restock.ec  */

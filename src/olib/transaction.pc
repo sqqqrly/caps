@@ -1,0 +1,473 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Transaction File Subroutines.
+ *
+ *  Note:           Uses only a normal cursor for retrieval.  No locking is
+ *                  used.
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/05/95   |  tjt  Original implementation.
+ *  07/22/99   |  Informix to Oracle Conversion by Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+#include <string.h>
+static char transaction_ec[] = "%Z% %M% %I% (%G% - %U%)";
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct tr_item
+{
+   long  tr_ref;
+   long  tr_time;
+   char  tr_group[6];
+   char  tr_con[15];
+   char  tr_on[7];
+   char  tr_pl[2];
+   char  tr_code[1];
+   char  tr_sku_mod1[15];
+   char  tr_stkloc[6];
+   char  tr_quan1[4];
+   char  tr_quan2[4];
+   char  tr_zone[3];
+   char  tr_lot[15];
+};
+struct tr_item2
+{
+   long  tr_ref;
+   long  tr_time;
+   char  tr_group[7];
+   char  tr_con[16];
+   char  tr_on[8];
+   char  tr_pl[3];
+   char  tr_code[2];
+   char  tr_sku_mod1[16];
+   char  tr_stkloc[7];
+   char  tr_quan1[5];
+   char  tr_quan2[5];
+   char  tr_zone[4];
+   char  tr_lot[16];
+};
+struct tr_item tr_lo, tr_hi;
+long transaction_last     = 0;
+
+long transaction_fd         = 0;
+long transaction_open_mode  = 0;
+long transaction_key        = 0;
+long transaction_count      = 0;
+long transaction_has_cursor = -1;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+ SQL_CURSOR trans_cursor0;                /* no key                       */
+ SQL_CURSOR trans_cursor1;                /* ref key                      */
+ SQL_CURSOR trans_cursor2;                /* pl + on + ref key            */ 
+
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+transaction_open_o(mode)
+register long mode;
+{
+  transaction_fd = 1;
+
+  transaction_open_mode  = mode;
+  transaction_last       = 0;
+  transaction_key        = 0;
+  transaction_count      = 0;
+  transaction_has_cursor = -1;
+  transaction_setkey_o(0);
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+transaction_close_o()
+{
+  if (transaction_has_cursor >= 0) transaction_close_cursor();
+
+  transaction_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+transaction_close_cursor()
+{
+  if (transaction_has_cursor >= 0)
+  {
+    switch (transaction_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE :trans_cursor0;
+              if (sqlca.sqlcode) icrash("transaction_close_cursor 0");
+              break;
+      case 1:
+              EXEC SQL CLOSE :trans_cursor1;
+              if (sqlca.sqlcode) icrash("transaction_close_cursor 1");
+              break;
+      case 2:
+              EXEC SQL CLOSE :trans_cursor2;
+              if (sqlca.sqlcode) icrash("transaction_close_cursor 2");
+              break;
+    }
+  }
+  transaction_has_cursor = -1;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+transaction_setkey_o(n)
+register long n;
+{
+  if (transaction_has_cursor >= 0) transaction_close_cursor();
+
+  transaction_key   = n < 0 || n > 2 ? 0 : n;   
+  transaction_count = 0;
+  transaction_last  = 0;
+  
+  tr_lo.tr_ref = 0;
+  memcpy(tr_lo.tr_pl,  "01", 2);
+  memset(tr_lo.tr_on,  0x20, 7);
+  memset(tr_lo.tr_con, 0x20, 15);
+
+  tr_hi.tr_ref = 0x7fffffff;
+  memcpy(tr_hi.tr_pl,  "99", 2);
+  memset(tr_hi.tr_on,  0x7f, 7);
+  memset(tr_hi.tr_con, 0x7f, 15);
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+transaction_startkey_o(p)
+struct tr_item *p;
+{
+  if (transaction_has_cursor >= 0) transaction_close_cursor();
+
+  transaction_count = 0;
+
+  memcpy(&tr_lo, p, sizeof(struct tr_item));
+  memcpy(&tr_hi, p, sizeof(struct tr_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+transaction_stopkey_o(p)
+struct tr_item *p;
+{
+  memcpy(&tr_hi, p, sizeof(struct tr_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+transaction_read_o(p, mode)
+struct tr_item *p;
+register long mode;
+{
+  transaction_startkey_o(p);
+  transaction_stopkey_o(p);
+  return transaction_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *-------------------------------------------------------------------------*/
+transaction_next_o(p, mode)
+register struct tr_item *p;
+register long mode;
+{  
+  switch (transaction_key)
+  {
+    case 0:  return transaction_next0(p, mode);
+    case 1:  return transaction_next1(p, mode);
+    case 2:  return transaction_next2(p, mode);
+  }
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key
+ *-------------------------------------------------------------------------*/
+transaction_next0(p, mode)
+register struct tr_item *p;
+register long mode;
+{  
+  struct tr_item2 work;
+  
+  if (!transaction_count)
+  {
+    if (transaction_has_cursor >= 0) transaction_close_cursor();
+
+    EXEC SQL ALLOCATE :trans_cursor0;
+
+    EXEC SQL EXECUTE
+    begin
+       trans_retrieve.open_cur0(:trans_cursor0);
+    end;
+    END-EXEC;
+    if(sqlca.sqlcode)
+       icrash("transaction_next 0");
+    transaction_has_cursor = transaction_key;
+  }
+  transaction_last = 0;
+  
+  EXEC SQL FETCH  :trans_cursor0 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    transaction_count += 1;
+    if (transaction_open_mode & mode) transaction_last = work.tr_ref;
+    transaction_copy(p, &work);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("transaction_next 0");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Reference
+ *-------------------------------------------------------------------------*/
+transaction_next1(p, mode)
+register struct tr_item *p;
+register long mode;
+{  
+  struct tr_item2 work;
+  long l_tr_ref;
+  
+  if (!transaction_count)
+  {
+    if (transaction_has_cursor >= 0) transaction_close_cursor();
+
+    EXEC SQL ALLOCATE :trans_cursor1;
+
+    l_tr_ref = p->tr_ref;
+
+    EXEC SQL EXECUTE
+    begin
+       trans_retrieve.open_cur1(:trans_cursor1,:l_tr_ref);
+    end;
+    END-EXEC;
+
+    if(sqlca.sqlcode)
+       icrash("transaction_next 1");
+    transaction_has_cursor = transaction_key;
+  }
+  transaction_last = 0;
+  
+  EXEC SQL FETCH :trans_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    transaction_count += 1;
+    if (transaction_open_mode & mode) transaction_last = work.tr_ref;
+    transaction_copy(p, &work);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("transaction_next 1");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Order Number
+ *-------------------------------------------------------------------------*/
+transaction_next2(p, mode)
+register struct tr_item *p;
+register long mode;
+{  
+  struct tr_item2 work;
+  char l_tr_pl[3],l_tr_on[8];
+  
+  if (!transaction_count)
+  {
+    if (transaction_has_cursor >= 0) transaction_close_cursor();
+
+    EXEC SQL ALLOCATE :trans_cursor2;
+
+    memcpy(l_tr_pl , p->tr_pl,2);
+    memcpy(l_tr_on , p->tr_on,7);
+    l_tr_pl[2]='\0';
+    l_tr_on[7]='\0';
+
+
+    EXEC SQL EXECUTE
+    begin
+       trans_retrieve.open_cur2(:trans_cursor2,:l_tr_pl,:l_tr_on);
+    end;
+    END-EXEC;
+
+    if(sqlca.sqlcode)
+       icrash("transactionr next 2");
+
+    transaction_has_cursor = transaction_key;
+  }
+  transaction_last = 0;
+  
+  EXEC SQL FETCH  :trans_cursor2 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    transaction_count += 1;
+    if (transaction_open_mode & mode) transaction_last = work.tr_ref;
+    transaction_copy(p, &work);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("transaction_next 2");
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field By Field
+ *-------------------------------------------------------------------------*/
+transaction_copy(p, q)
+register struct tr_item  *p;
+register struct tr_item2 *q;
+{
+  p->tr_ref  = q->tr_ref;
+  p->tr_time = q->tr_time;
+
+  memcpy(p->tr_group,    q->tr_group,     6);
+  memcpy(p->tr_con,      q->tr_con,      15);
+  memcpy(p->tr_on,       q->tr_on,        7);
+  memcpy(p->tr_pl,       q->tr_pl,        2);
+  memcpy(p->tr_code,     q->tr_code,      1);
+  memcpy(p->tr_sku_mod1, q->tr_sku_mod1, 15);
+  memcpy(p->tr_stkloc,   q->tr_stkloc,    6);
+  memcpy(p->tr_quan1,    q->tr_quan1,     4);
+  memcpy(p->tr_quan2,    q->tr_quan2,     4);
+  memcpy(p->tr_zone,     q->tr_zone,      3);
+  memcpy(p->tr_lot,      q->tr_lot,      15);
+  
+  return 0;
+}
+transaction_copy_reverse(p, q)
+struct tr_item  *p;
+struct tr_item2 *q;
+{
+  q->tr_ref  = p->tr_ref;
+  q->tr_time = p->tr_time;
+
+  memcpy(q->tr_group,    p->tr_group,     6);
+  memcpy(q->tr_con,      p->tr_con,      15);
+  memcpy(q->tr_on,       p->tr_on,        7);
+  memcpy(q->tr_pl,       p->tr_pl,        2);
+  memcpy(q->tr_code,     p->tr_code,      1);
+  memcpy(q->tr_sku_mod1, p->tr_sku_mod1, 15);
+  memcpy(q->tr_stkloc,   p->tr_stkloc,    6);
+  memcpy(q->tr_quan1,    p->tr_quan1,     4);
+  memcpy(q->tr_quan2,    p->tr_quan2,     4);
+  memcpy(q->tr_zone,     p->tr_zone,      3);
+  memcpy(q->tr_lot,      p->tr_lot,      15);
+  
+  q->tr_group[6]      =  '\0';
+  q->tr_con[15]       =  '\0';
+  q->tr_on[7]         =  '\0';
+  q->tr_pl[2]         =  '\0';
+  q->tr_code[1]       =  '\0';
+  q->tr_sku_mod1[15]  =  '\0';
+  q->tr_stkloc[6]     =  '\0';
+  q->tr_quan1[4]      =  '\0';
+  q->tr_quan2[4]      =  '\0';
+  q->tr_zone[3]       =  '\0';
+  q->tr_lot[15]       =  '\0';
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+transaction_write_o(p)
+struct tr_item *p;
+{
+  struct tr_item2 work;
+  long l_xt_ref;
+  p->tr_time = time(0);
+  transaction_copy_reverse(p,&work);
+
+  /* xt_ref is populated  from a sequence and value from C program
+     Is ignored */
+
+  EXEC SQL SELECT trans_seq.nextval 
+           INTO :l_xt_ref
+           FROM dual; 
+
+  EXEC SQL INSERT INTO TRANSACTION(
+      xt_ref    , xt_time , xt_group , xt_con     , 
+      xt_on     , xt_pl   , xt_code  , xt_sku_mod1, 
+      xt_stkloc , xt_quan1, xt_quan2 , xt_zone    , 
+      xt_lot)
+  VALUES (
+    :l_xt_ref     , :work.tr_time , :work.tr_group , :work.tr_con     , 
+    :work.tr_on   , :work.tr_pl   , :work.tr_code  , :work.tr_sku_mod1, 
+    :work.tr_stkloc, :work.tr_quan1, :work.tr_quan2 , :work.tr_zone    , 
+    :work.tr_lot);
+
+  if (sqlca.sqlcode) icrash("transaction_write exceute");
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+transaction_update_o(p)
+struct tr_item *p;
+{
+  struct tr_item2 work;
+  transaction_copy_reverse(p,&work);
+  if (transaction_last > 0)
+  {
+    EXEC SQL UPDATE TRANSACTION 
+    SET  xt_time        =  :work.tr_time, 
+         xt_group       =  :work.tr_group,
+         xt_con         =  :work.tr_con,
+         xt_on          =  :work.tr_on,
+         xt_pl          =  :work.tr_pl, 
+         xt_code        =  :work.tr_code, 
+         xt_sku_mod1    =  :work.tr_sku_mod1,
+         xt_stkloc      =  :work.tr_stkloc, 
+         xt_quan1       =  :work.tr_quan1, 
+         xt_quan2       =  :work.tr_quan2, 
+         xt_zone        =  :work.tr_zone, 
+         xt_lot         =  :work.tr_lot 
+
+    WHERE xt_ref        =  :transaction_last;
+    transaction_last = 0;
+    
+    if (sqlca.sqlcode) icrash("transaction_update");
+    return 0;
+  }
+  krash("transaction_update", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+transaction_delete_o()
+{
+  if (transaction_last > 0)
+  {
+   /* begin work; */
+
+   EXEC SQL DELETE FROM TRANSACTION 
+   WHERE xt_ref = :transaction_last;
+
+    if (sqlca.sqlcode ==  0)
+    {
+        EXEC SQL COMMIT;
+        transaction_last = 0;
+        return 0;
+     }
+  }
+  krash("transaction_delete", "no active record", 1);
+}
+
+/* end of transaction.ec  */
+
+

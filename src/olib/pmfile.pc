@@ -1,0 +1,592 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Pick Module File Subroutines.
+ *
+ *  Note:           Uses a normal cursor for readonly operations.
+ *                  Uses an update cursor for autolock operations.
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/05/95   |  tjt  Original implementation.
+ *  12/18/96   |  tjt  Added alloc field for Dell.
+ *-------------------------------------------------------------------------*/
+static char pmfile_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;    
+
+#define SQLNOTFOUND 1403
+struct pm_item
+{
+   long  pmodno;
+   char  pmsku[15];
+   long  qty;
+   long  alloc;
+   long  restock;
+   long  rqty;
+   long  lcap;
+   char  stkloc[6];
+   char  display[4];
+   short plidx;
+   char  piflag[1];
+   long  cuunits;
+   long  cmunits;
+   long  culines;
+   long  cmlines;
+   long  curecpt;
+   long  cmrecpt;
+   char  rsflag[1];
+   char  acflag[1];
+};
+
+struct pm_item2
+{
+   long  pmodno;
+   char  pmsku[16];
+   long  qty;
+   long  alloc;
+   long  restock;
+   long  rqty;
+   long  lcap;
+   char  stkloc[7];
+   char  display[5];
+   short plidx;
+   char  piflag[2];
+   long  cuunits;
+   long  cmunits;
+   long  culines;
+   long  cmlines;
+   long  curecpt;
+   long  cmrecpt;
+   char  rsflag[2];
+   char  acflag[2];
+};
+struct pm_item pm_lo, pm_hi;
+
+long pmfile_fd         = 0;
+long pmfile_open_mode  = 0;
+long pmfile_key        = 0;
+long pmfile_count      = 0;
+long pmfile_last       = 0;
+long pmfile_has_cursor = -1;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+ SQL_CURSOR pmfile_cursor0;        /* no key update                  */
+ SQL_CURSOR pmfile_cursor1;        /* pick module number key update  */
+ SQL_CURSOR pmfile_cursor2;        /* sku key update                 */
+ SQL_CURSOR pmfile_cursor3;        /* stkloc key update              */
+
+EXEC SQL END DECLARE SECTION;
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+pmfile_open_o(mode)
+register long mode;
+{
+  pmfile_fd = 1;
+
+  pmfile_open_mode  = mode;
+  pmfile_key        = 0;
+  pmfile_count      = 0;
+  pmfile_last       = 0;
+  pmfile_has_cursor = -1;
+  pmfile_setkey_o(0);
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+pmfile_close_o()
+{
+  if (pmfile_has_cursor >= 0) pmfile_close_cursor();
+
+  pmfile_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+pmfile_close_cursor()
+{
+  if (pmfile_has_cursor >= 0)
+  {
+    switch (pmfile_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE :pmfile_cursor0;
+              if (sqlca.sqlcode) icrash("pmfile_close_cursor 0");
+              break;
+      case 1:
+              EXEC SQL CLOSE :pmfile_cursor1;
+              if (sqlca.sqlcode) icrash("pmfile_close_cursor 1");
+              break;
+      case 2:
+              EXEC SQL CLOSE :pmfile_cursor2;
+              if (sqlca.sqlcode) icrash("pmfile_close_cursor 2");
+              break;
+      case 3:
+              EXEC SQL CLOSE :pmfile_cursor3;
+              if (sqlca.sqlcode) icrash("pmfile_close_cursor 3");
+              break;
+    }
+  }
+  pmfile_last = 0;
+  pmfile_has_cursor = -1;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+pmfile_setkey_o(n)
+register long n;
+{
+  if (pmfile_has_cursor >= 0) pmfile_close_cursor();
+
+  pmfile_key   = n < 0 || n > 3 ? 0 : n;   
+  pmfile_count = 0;
+
+  pm_lo.pmodno = 0;
+  memset(pm_lo.pmsku,  0x20, 15);
+  memset(pm_lo.stkloc, 0x20,  6);
+
+  pm_hi.pmodno = 0x7fffffff;
+  memset(pm_hi.pmsku,  0x7f, 15);
+  memset(pm_hi.stkloc, 0x7f,  6);
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+pmfile_startkey_o(p)
+struct pm_item *p;
+{
+  if (pmfile_has_cursor >= 0) pmfile_close_cursor();
+
+  if (pmfile_key > 3) pmfile_key -= 4;
+  
+  pmfile_count = 0;
+  pmfile_last  = 0;
+  
+  memcpy(&pm_lo, p, sizeof(struct pm_item));
+  memcpy(&pm_hi, p, sizeof(struct pm_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+pmfile_stopkey_o(p)
+struct pm_item *p;
+{
+  memcpy(&pm_hi, p, sizeof(struct pm_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+pmfile_read_o(p, mode)
+struct pm_item *p;
+register long mode;
+{
+  long ret;
+  
+  pmfile_startkey_o(p);
+  pmfile_stopkey_o(p);
+  ret = pmfile_next_o(p, mode);
+  if (!(pmfile_open_mode & mode)) pmfile_close_cursor();
+  return ret;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *-------------------------------------------------------------------------*/
+pmfile_next_o(p, mode)
+register struct pm_item *p;
+register long mode;
+{  
+  /*if (pmfile_count <= 0)
+  {
+    if (!(pmfile_open_mode & mode)) pmfile_key += 4;
+  }*/
+  switch (pmfile_key)
+  {
+    case 0:  return pmfile_next0(p, mode);
+    case 1:  return pmfile_next1(p, mode);
+    case 2:  return pmfile_next2(p, mode);
+    case 3:  return pmfile_next3(p, mode);
+  }
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key For Update
+ *-------------------------------------------------------------------------*/
+pmfile_next0(p, mode)
+register struct pm_item *p;
+register long mode;
+{  
+  struct pm_item2 work2;
+  if (!pmfile_count)
+  {
+     if (pmfile_has_cursor >= 0) pmfile_close_cursor();
+  
+     EXEC SQL ALLOCATE :pmfile_cursor0;
+
+     EXEC SQL EXECUTE
+     begin
+         pmfile_retrieve.open_cur0(:pmfile_cursor0);
+     end;
+     END-EXEC;
+
+     if (sqlca.sqlcode) icrash("pmfile_open_cursor 0");
+  
+     pmfile_has_cursor = pmfile_key;
+  
+  }
+  pmfile_last = 0;
+  
+  EXEC SQL FETCH :pmfile_cursor0 INTO :work2;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    pmfile_count += 1;
+    pmfile_copy(p, &work2);
+    pmfile_last = 1;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    pmfile_close_cursor();
+    return 1;
+  }
+  icrash("pmfile_next 0");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Module Number 
+ *-------------------------------------------------------------------------*/
+pmfile_next1(p, mode)
+register struct pm_item *p;
+register long mode;
+{  
+ struct pm_item2 new;
+ int l_pmodno;
+  
+ if (!pmfile_count)
+ {
+    if (pmfile_has_cursor >= 0) pmfile_close_cursor();
+
+    EXEC SQL ALLOCATE :pmfile_cursor1;
+
+    l_pmodno=p->pmodno; 
+
+    EXEC SQL EXECUTE
+    begin
+         pmfile_retrieve.open_cur1(:pmfile_cursor1,:l_pmodno);
+    end;
+    END-EXEC;
+
+     if (sqlca.sqlcode) icrash("pmfile_open_cursor 1");
+  
+     pmfile_has_cursor = pmfile_key;
+
+  }
+  pmfile_last = 0;
+  
+  EXEC SQL FETCH :pmfile_cursor1 INTO :new;
+  if (sqlca.sqlcode == 0)
+  {
+    pmfile_count += 1;
+    pmfile_copy(p, &new);
+    pmfile_last = 1;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND)
+  {
+    pmfile_close_cursor();
+    return 1;
+  }
+  icrash("pmfile_next1 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On SKU For Update
+ *-------------------------------------------------------------------------*/
+pmfile_next2(p, mode)
+register struct pm_item *p;
+register long mode;
+{  
+  struct pm_item2 new;
+  char l_pmsku[16];   
+  if (!pmfile_count)
+  {
+    if (pmfile_has_cursor >= 0) pmfile_close_cursor();
+
+    EXEC SQL ALLOCATE :pmfile_cursor2;
+
+    memcpy(l_pmsku,p->pmsku,15); 
+    l_pmsku[15]='\0';
+
+    EXEC SQL EXECUTE
+    begin
+         pmfile_retrieve.open_cur2(:pmfile_cursor2,:l_pmsku);
+    end;
+    END-EXEC;
+
+     if (sqlca.sqlcode) icrash("pmfile_open_cursor 2");
+  
+     pmfile_has_cursor = pmfile_key;
+  }
+  pmfile_last = 0;
+  
+  EXEC SQL FETCH :pmfile_cursor2 INTO :new;
+
+  if (sqlca.sqlcode == 0)
+  {
+    pmfile_count += 1;
+    pmfile_copy(p, &new);
+    pmfile_last = 1;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND)
+  {
+    pmfile_close_cursor();
+    return 1;
+  } 
+  icrash("pmfile_next2 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On stkloc For Update
+ *-------------------------------------------------------------------------*/
+pmfile_next3(p, mode)
+register struct pm_item *p;
+register long mode;
+{  
+  struct pm_item2 new;
+  char l_pmstkloc[7];
+
+  if (!pmfile_count)
+  {
+    if (pmfile_has_cursor >= 0) pmfile_close_cursor();
+
+    EXEC SQL ALLOCATE :pmfile_cursor3;
+
+    memcpy(l_pmstkloc,p->stkloc,6); 
+    l_pmstkloc[6]='\0';
+
+    EXEC SQL EXECUTE
+    begin
+         pmfile_retrieve.open_cur3(:pmfile_cursor3,:l_pmstkloc);
+    end;
+    END-EXEC;
+
+     if (sqlca.sqlcode) icrash("pmfile_open_cursor 3");
+  
+     pmfile_has_cursor = pmfile_key;
+  }
+  pmfile_last = 0;
+  
+  EXEC SQL FETCH :pmfile_cursor3 INTO :new;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    pmfile_count += 1;
+    pmfile_copy(p, &new);
+    pmfile_last = 1;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND)
+  {
+    pmfile_close_cursor();
+    return 1;
+  }
+  icrash("pmfile_next 3");
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field
+ *-------------------------------------------------------------------------*/
+pmfile_copy(p, q)
+register struct pm_item  *p;
+register struct pm_item2 *q;
+{
+  p->pmodno  = q->pmodno;
+  p->qty     = q->qty;
+  p->alloc   = q->alloc;
+  p->restock = q->restock;
+  p->rqty    = q->rqty;
+  p->lcap    = q->lcap;
+  p->plidx   = q->plidx;
+  p->cuunits = q->cuunits;
+  p->cmunits = q->cmunits;
+  p->culines = q->culines;
+  p->cmlines = q->cmlines;
+  p->curecpt = q->curecpt;
+  p->cmrecpt = q->cmrecpt;
+
+  memcpy(p->pmsku,   q->pmsku,  15);
+  memcpy(p->stkloc,  q->stkloc,  6);
+  memcpy(p->display, q->display, 4);
+  memcpy(p->piflag,  q->piflag,  1);
+  memcpy(p->rsflag,  q->rsflag,  1);
+  memcpy(p->acflag,  q->acflag,  1);
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field for insert and update purposed
+ *-------------------------------------------------------------------------*/
+pmfile_copy_reverse(p, q)
+struct pm_item  *p;
+struct pm_item2 *q;
+{
+  q->pmodno  = p->pmodno;
+  q->qty     = p->qty;
+  q->alloc   = p->alloc;
+  q->restock = p->restock;
+  q->rqty    = p->rqty;
+  q->lcap    = p->lcap;
+  q->plidx   = p->plidx;
+  q->cuunits = p->cuunits;
+  q->cmunits = p->cmunits;
+  q->culines = p->culines;
+  q->cmlines = p->cmlines;
+  q->curecpt = p->curecpt;
+  q->cmrecpt = p->cmrecpt;
+
+  memcpy(q->pmsku,   p->pmsku,  15);
+  memcpy(q->stkloc,  p->stkloc,  6);
+  memcpy(q->display, p->display, 4);
+  memcpy(q->piflag,  p->piflag,  1);
+  memcpy(q->rsflag,  p->rsflag,  1);
+  memcpy(q->acflag,  p->acflag,  1);
+  q->pmsku[15]='\0';
+  q->stkloc[6]='\0';
+  q->display[4]='\0';
+  q->piflag[1]='\0';
+  q->rsflag[1]='\0';
+  q->acflag[1]='\0';
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+pmfile_write_o(p)
+struct pm_item *p;
+{
+  struct pm_item2 work;
+
+  pmfile_copy_reverse(p,&work);
+
+  
+  EXEC SQL INSERT INTO pmfile (
+      pmodno  ,pmsku   ,qty    ,alloc  ,
+      restock ,rqty    ,lcap   ,stkloc ,
+      display ,plidx   ,piflag ,cuunits,
+      cmunits ,culines,cmlines,curecpt ,
+      cmrecpt,rsflag , acflag) 
+  VALUES(:work.pmodno   ,:work.pmsku  ,:work.qty    ,:work.alloc,
+         :work.restock  ,:work.rqty   ,:work.lcap   ,:work.stkloc,
+         :work.display  ,:work.plidx  ,:work.piflag ,:work.cuunits,
+         :work.cmunits  ,:work.culines,:work.cmlines,:work.curecpt,
+         :work.cmrecpt,:work.rsflag, :work.acflag);
+  if (sqlca.sqlcode) icrash("pmfile_write insert");
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+pmfile_update_o(p)
+register struct pm_item *p;
+{
+  struct pm_item2 work;
+  int l_pmodno;
+  if (pmfile_last > 0)
+  {
+     pmfile_copy_reverse(p,&work);
+     pmfile_last = 0;
+     l_pmodno=p->pmodno;
+
+     EXEC SQL UPDATE pmfile
+     set   pmodno  = :work.pmodno,
+           pmsku   = :work.pmsku,
+           qty     = :work.qty,
+           alloc   = :work.alloc,
+           restock = :work.restock,
+           rqty    = :work.rqty,
+           lcap    = :work.lcap,
+           stkloc  = :work.stkloc,
+           display = :work.display,
+           plidx   = :work.plidx,
+           piflag  = :work.piflag,
+           cuunits = :work.cuunits,
+           cmunits = :work.cmunits,
+           culines = :work.culines,
+           cmlines = :work.cmlines,
+           curecpt = :work.curecpt,
+           cmrecpt = :work.cmrecpt,
+           rsflag  = :work.rsflag,
+           acflag  = :work.acflag
+        WHERE pmodno = :l_pmodno;
+
+    if (sqlca.sqlcode) icrash("pmfile_update");
+
+    return 0;
+  }
+  krash("pmfile_update", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+pmfile_delete_o(p)
+struct pm_item *p;
+{
+  int l_pmodno;
+  l_pmodno = p->pmodno;
+  if (pmfile_last > 0)
+  {
+    pmfile_last = 0;
+
+    EXEC SQL DELETE pmfile
+             WHERE pmodno = :l_pmodno;
+    if (sqlca.sqlcode) icrash("pmfile_delete ");
+
+    return 0;
+  }
+  krash("pmfile_delete", "no current record", 1);
+}
+
+/* end of pmfile.ec  */
+/*-------------------------------------------------------------------------*
+ *  Update Database when a pick module is removed
+ *-------------------------------------------------------------------------*/
+pmfile_update_del(l_pmodno)
+int l_pmodno;
+{
+     EXEC SQL UPDATE pmfile
+     SET   pmodno  = pmodno - 1
+     WHERE pmodno  > :l_pmodno;
+
+     if (sqlca.sqlcode) icrash("pmfile_update_del");
+
+     return 0;
+ }
+/*-------------------------------------------------------------------------*
+ *  Update Database when a pick module is inserted
+ *-------------------------------------------------------------------------*/
+pmfile_update_ins(l_pmodno)
+int l_pmodno;
+{
+     EXEC SQL UPDATE pmfile
+     SET   pmodno  = pmodno + 1
+     WHERE pmodno  >= :l_pmodno;
+
+     if (sqlca.sqlcode) icrash("pmfile_update_ins");
+
+     return 0;
+ }
+

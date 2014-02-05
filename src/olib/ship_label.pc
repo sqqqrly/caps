@@ -1,0 +1,258 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Shipping Label Subroutines.
+ *
+ *  Note:           Has only one serial key.  Uses a normal cursor to
+ *                  retrieve records in order.  No locking is used,  
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   |  tjt  Original implementation.
+ *  09/10/96   |  tjt  Add ref to write function.
+ *  07/26/99   |  Informix to Oracle Conversion By Ravi Jagannathan   
+ *-------------------------------------------------------------------------*/
+static char ship_label_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct sl_item
+{
+   long  sl_ref;
+   long  sl_time;
+   short sl_copies;
+   short sl_pl;
+   long  sl_on;
+   short sl_zone;
+};
+struct sl_item sl_lo, sl_hi;
+long ship_label_last = 0;
+
+long ship_label_fd         = 0;
+long ship_label_open_mode  = 0;
+long ship_label_key        = 0;
+long ship_label_count      = 0;
+long ship_label_has_cursor = 0;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+SQL_CURSOR sl_cursor1;                  /* ref key                    */
+
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+ship_label_open_o(mode)
+register long mode;
+{
+  ship_label_fd   = 1;
+
+  ship_label_open_mode  = mode;
+  ship_label_key        = 0; 
+  ship_label_count      = 0;
+  ship_label_last       = 0;
+  ship_label_has_cursor = 0;
+  ship_label_setkey_o(1);
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+ship_label_close_o()
+{
+  if (ship_label_has_cursor) ship_label_close_cursor();
+
+  ship_label_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+ship_label_close_cursor()
+{
+  if (ship_label_has_cursor)
+  {
+    EXEC SQL CLOSE :sl_cursor1;
+    if (sqlca.sqlcode) icrash("ship_label_close_cursor");
+  }
+  ship_label_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+ship_label_setkey_o(n)
+register long n;
+{
+  if (ship_label_has_cursor) ship_label_close_cursor();
+
+  ship_label_key   = 1;   
+  ship_label_count = 0;
+
+  sl_lo.sl_ref = 1;
+  sl_hi.sl_ref = 0x7fffffff;
+  
+  ship_label_last  = 0;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+ship_label_startkey_o(p)
+struct sl_item *p;
+{
+  if (ship_label_has_cursor) ship_label_close_cursor();
+
+  ship_label_count = 0;
+  
+  memcpy(&sl_lo, p, sizeof(struct sl_item));
+  memcpy(&sl_hi, p, sizeof(struct sl_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+ship_label_stopkey_o(p)
+struct sl_item *p;
+{
+  memcpy(&sl_hi, p, sizeof(struct sl_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+ship_label_read_o(p, mode)
+register struct sl_item *p;
+register long mode;
+{
+  ship_label_startkey_o(p);
+  ship_label_stopkey_o(p);
+  return ship_label_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Queue Time
+ *-------------------------------------------------------------------------*/
+ship_label_next_o(p, mode)
+register struct sl_item *p;
+register long mode;
+{  
+  struct sl_item work;
+  int l_sl_ref;
+  if (!ship_label_count)
+  {
+    if (ship_label_has_cursor) ship_label_close_cursor();
+
+    l_sl_ref = sl_lo.sl_ref;
+    EXEC SQL ALLOCATE :sl_cursor1;
+
+    EXEC SQL EXECUTE
+    begin 
+       shiplabel_retrieve.open_cur(:sl_cursor1,:l_sl_ref);
+    end; 
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("ship_label_open_cursor");
+
+    ship_label_has_cursor = 1;
+  }
+  ship_label_last = 0;
+
+  EXEC SQL FETCH :sl_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    ship_label_count += 1;
+    ship_label_last   = work.sl_ref;
+    memcpy(p, &work, sizeof(struct sl_item));
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    ship_label_close_cursor();
+    return 1;
+  }
+  icrash("ship_label_next");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *  A New Sequence is created for populating sl_ref and the
+ *  value from C program is Ignored. Sequence Name is ship_label_seq
+ *  and the SQL script name is ship_label_seq.sql
+ *-------------------------------------------------------------------------*/
+ship_label_write_o(p)
+struct sl_item *p;
+{
+  struct sl_item work;
+  int l_pl_ref;
+  p->sl_time = time(0);
+  memcpy(&work,p,sizeof(struct sl_item));
+  
+  EXEC SQL SELECT ship_label_seq.nextval 
+           INTO   :l_pl_ref 
+           FROM   dual;
+
+  EXEC SQL INSERT INTO ship_label 
+  (sl_ref, sl_time, sl_copies, sl_pl, 
+   sl_on , sl_zone)
+  VALUES
+  (:l_pl_ref, :work.sl_time, :work.sl_copies, :work.sl_pl, 
+   :work.sl_on , :work.sl_zone);
+
+  if (sqlca.sqlcode) icrash("ship_label_write");
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+ship_label_update_o(p)
+struct sl_item *p;
+{
+  struct sl_item work;
+  if (ship_label_last > 0)
+  {
+    memcpy(&work,p,sizeof(struct sl_item));
+    EXEC SQL UPDATE ship_label 
+    SET    sl_time    = :work.sl_time, 
+           sl_copies  = :work.sl_copies, 
+           sl_pl      = :work.sl_pl, 
+           sl_on      = :work.sl_on, 
+           sl_zone    = :work.sl_zone
+    WHERE  sl_ref =  :ship_label_last;
+
+    ship_label_last = 0;
+ 
+    if (sqlca.sqlcode) icrash("ship_label_update");
+  }
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+ship_label_delete_o()
+{
+  if (ship_label_last > 0)
+  {
+    EXEC SQL DELETE ship_label 
+    WHERE sl_ref = :ship_label_last;
+  
+    ship_label_last = 0;
+    
+    if (sqlca.sqlcode) icrash("ship_label_delete");
+  }
+  return 0;
+}
+
+/* end of ship_label.ec  */
+
+

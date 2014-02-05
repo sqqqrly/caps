@@ -1,0 +1,226 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Open and close database.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   | tjt  Original implementation.
+ *  07/21/99   | Informix to Oracle Conversion By Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char db_open_close_ec[] = "%Z% %M% %I% (%G% - %U%)";
+/*
+#include <unistd.h>
+ #include <sqlca.h> */
+EXEC SQL INCLUDE  SQLCA;
+
+EXEC SQL BEGIN DECLARE SECTION;
+  char uname='/';
+EXEC SQL END DECLARE SECTION;
+/*-------------------------------------------------------------------------*
+ *  Open  Connection to Database
+ *-------------------------------------------------------------------------*/
+
+database_open_o()
+{
+  int i,j,k;
+
+
+  int  oldid;
+  oldid=geteuid(); /* get the effective user id */
+  setuid(200);   /* User Identification of admin is used for 
+                    all the USERS */
+  EXEC SQL CONNECT :uname;
+  setuid(oldid); 
+  if (sqlca.sqlcode) icrash("open database");
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ * Closes Connection
+ *-------------------------------------------------------------------------*/
+database_close_o()
+{
+  return 0;
+} 
+/*-------------------------------------------------------------------------*
+ *  Close/Open Transaction
+ *-------------------------------------------------------------------------*/
+database_commit_o()
+{
+   EXEC SQL COMMIT;
+   return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Commit Transaction Only
+ *-------------------------------------------------------------------------*/
+commit_work_o()
+{
+   EXEC SQL COMMIT;
+   return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Begin Transaction Only
+ *-------------------------------------------------------------------------*/
+begin_work_o()
+{
+   /* begin work; */
+   return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Statistics
+ *-------------------------------------------------------------------------*/
+update_statistics()
+{
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  ORACLE Crash Message
+ *-------------------------------------------------------------------------*/
+icrash(text)
+register char *text;
+{
+  char mess[20];
+  sprintf(mess, "ORACLE [%d, %d]", sqlca.sqlcode, sqlca.sqlerrd[1]); 
+  krash(text, mess, 1);
+  exit(1);
+}
+
+int iSQLError( void )
+{
+   return ( sqlca.sqlcode );
+}
+
+
+int iOpenDatabase(char *pDBName )
+{
+	database_open_o();
+}
+
+/************************************************************************
+   Function Name: iCloseDatabase
+  
+   Purpose: close an open database
+  
+   Return Values: sql error code
+ ************************************************************************/
+int iCloseDatabase( void )
+{
+	database_close_o();
+}
+
+int iBeginTransaction( void )
+{
+/*
+	EXEC SQL begin work;
+	return( iSQLError());
+*/
+}
+
+int iCommitTransaction( void )
+{
+	database_commit_o();
+}
+
+int iRollbackTransaction( void )
+{
+	EXEC SQL rollback;
+	return( iSQLError() );
+}
+
+int iSetLockWaitForever( void )
+{
+/*
+	EXEC SQL set lock mode to wait;
+	return( iSQLError() );
+*/
+}
+
+/************************************************************************
+   Function Name: iSetIsolationMode
+  
+   Purpose: Sets the data base isolation mode to cursor stability
+  
+   Return Values: sql error code
+ ************************************************************************/
+int iSetIsolationMode( void )
+{
+/*
+	EXEC SQL set isolation to cursor stability;
+	return( iSQLError() );
+*/
+}
+
+/************************************************************************
+   Function Name: iSetLockNotWait
+  
+   Purpose: Sets the data base lock to not wait
+  
+   Return Values: sql error code
+ ************************************************************************/
+int iSetLockNotWait( void )
+{
+/*
+	EXEC SQL set lock mode to not wait;
+	return( iSQLError() );
+*/
+}
+
+char *szStrUpr( char *szInStr )
+{
+	int iSub;
+
+	for ( iSub = 0; szInStr[iSub]; iSub++ )
+		szInStr[iSub] = toupper(szInStr[iSub]);
+	return(szInStr);
+}
+
+/************************************************************************
+   Function Name: StrClip
+  
+   Purpose: Clips trailing spaces from a string
+  
+ ************************************************************************/
+void StrClip( char *szInStr )
+{
+	int iSub;
+
+	for ( iSub = strlen(szInStr) - 1;
+				( iSub >= 0 ) &&
+				 ( ( szInStr[iSub] <= ' ' ) || ( szInStr[iSub] > '~') );
+				iSub-- )
+		szInStr[iSub] = '\0';
+}
+
+void StrZero(char *szInStr, int val)
+{
+	long tmpvar;
+	
+
+	tmpvar=atol(szInStr);
+	sprintf(szInStr,"%0*d",val, tmpvar);
+}
+
+void LogError( char *szError )
+{
+	char szDateTime[60];
+/*
+	time_t t;
+
+	// Get the time, convert it to a string, strip the linefeed, 
+	// and print the date and time before each log entry.
+	time( &t );
+	strcpy( szDateTime, ctime( &t ) );
+	szDateTime[ strlen( szDateTime ) - 1 ] = 32;	
+	fputs( szDateTime, stderr );
+	fputs( szError, stderr );
+	if( szError[ strlen( szError ) - 1 ] != '\n' )
+		fputs( "\n", stderr );
+*/
+}

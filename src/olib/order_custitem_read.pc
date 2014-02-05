@@ -1,0 +1,280 @@
+#define SQLNOTFOUND 1403
+
+EXEC SQL INCLUDE SQLCA;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+    SQL_CURSOR ordercustitem_cursor0;
+    SQL_CURSOR ordercustitem_cursor1;
+
+EXEC SQL END DECLARE SECTION;
+
+struct ordercustitem
+{
+	long cust_item_nbr;
+	long cust_order_nbr;
+	char sku_no[6];
+	char pick_location[7];
+        char descr[30];
+	long ordered_qty;
+	long ratio;
+        long assign_tote_id;
+        char work_code[11];
+	char merch_type[1];
+        long picked_qty;
+        long actual_tote_id;
+        long picker_id;
+        char pick_datetime[20];
+};
+
+struct ordercustitem2
+{
+	long cust_item_nbr;
+	long cust_order_nbr;
+	char sku_no[7];
+	char pick_location[8];
+        char descr[31];
+	long ordered_qty;
+	long ratio;
+        long assign_tote_id;
+        char work_code[12];
+	char merch_type[2];
+        long picked_qty;
+        long actual_tote_id;
+        long picker_id;
+        char pick_datetime[20];
+};
+struct ordercustitem ordercustitem_lo, ordercustitem_hi;
+
+long corder_fd         = 0;
+long corder_open_mode  = 0;
+long corder_key        = 0;
+long corder_count      = 0;
+long corder_last       = 0;
+long corder_has_cursor = -1;
+
+/*---------------------------------------------------------------------*
+ *  Open Database
+ *--------------------------------------------------------------------*/
+ordercustitem_open_o(mode)
+register long mode;
+{
+  corder_fd = 1;
+
+  corder_open_mode  = mode;
+  corder_key        = 0;
+  corder_count      = 0;
+  corder_last       = 0;
+  corder_has_cursor = -1;
+  ordercustitem_setkey_o(0);
+  return 1;
+}
+/*---------------------------------------------------------------------*
+ *  Close Database
+ *--------------------------------------------------------------------*/
+ordercustitem_close_o()
+{
+  if (corder_has_cursor >= 0) ordercustitem_close_cursor();
+  corder_fd = 0;
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Set Database Access Key
+ *--------------------------------------------------------------------*/
+ordercustitem_setkey_o(n)
+register long n;
+{
+  if (corder_has_cursor >= 0) ordercustitem_close_cursor(); 
+  corder_key   = n < 0 || n > 2 ? 0 : n;   
+  corder_count = 0;
+  corder_last  = 0;
+  
+  ordercustitem_lo.cust_order_nbr = 1;
+
+  ordercustitem_hi.cust_order_nbr = 0x7fffffff;
+  
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *--------------------------------------------------------------------*/
+ordercustitem_startkey_o(p)
+struct ordercustitem *p;
+{
+  if (corder_has_cursor >= 0) ordercustitem_close_cursor(); 
+
+  if (corder_key > 1) corder_key -= 2;
+  
+  corder_count = 0;
+  corder_last  = 0;
+  
+  memcpy(&ordercustitem_lo, p, sizeof(struct ordercustitem));
+  memcpy(&ordercustitem_hi, p, sizeof(struct ordercustitem));
+
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *--------------------------------------------------------------------*/
+ordercustitem_stopkey_o(p)
+struct ordercustitem *p;
+{
+  memcpy(&ordercustitem_hi, p, sizeof(struct ordercustitem));
+
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Read Database Row
+ *--------------------------------------------------------------------*/
+ordercustitem_read_o(p, mode)
+struct ordercustitem *p;
+{
+  long ret;
+  
+  ordercustitem_startkey_o(p);
+  ordercustitem_stopkey_o(p);
+  ret = ordercustitem_next_o(p, mode);
+  if (!(corder_open_mode & mode)) ordercustitem_close_cursor(); 
+  return ret;
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *--------------------------------------------------------------------*/
+ordercustitem_next_o(p, mode)
+register struct ordercustitem  *p;
+register long mode;
+{  
+  switch (corder_key)
+  {
+    case 0:  return ordercustitem_next0(p);
+    case 1:  return ordercustitem_next1(p);
+  }
+  return 1;
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key 
+ *--------------------------------------------------------------------*/
+ordercustitem_next0(p)
+register struct ordercustitem *p;
+{  
+  struct ordercustitem2 new;
+  
+  if (!corder_count)
+  {
+    if (corder_has_cursor >= 0) ordercustitem_close_cursor(); 
+
+    EXEC SQL ALLOCATE :ordercustitem_cursor0;
+
+    EXEC SQL EXECUTE 
+         begin
+            ordercusti_retrieve.open_cur0(:ordercustitem_cursor0);
+         end;       
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("ordercustitem_next0 open");
+    corder_has_cursor = corder_key;
+   }
+    corder_last = 0;
+
+    EXEC SQL FETCH  :ordercustitem_cursor0
+             INTO   :new;
+
+   if (sqlca.sqlcode == 0)
+   {
+      corder_count += 1;
+      corder_last   = 1;
+      ordercustitem_copy(p, &new);
+      return 0;
+   }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    ordercustitem_close_cursor();
+    return 1;
+  }
+  icrash("ordercustitem_next0 fetch");
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Order Number 
+ *--------------------------------------------------------------------*/
+ordercustitem_next1(p)
+register struct ordercustitem *p;
+{  
+  struct ordercustitem2 new;
+  long l_cust_order_nbr;
+  if (!corder_count)
+  {
+    if (corder_has_cursor >= 0) ordercustitem_close_cursor(); 
+
+    EXEC SQL ALLOCATE :ordercustitem_cursor1;
+
+    l_cust_order_nbr=p->cust_order_nbr;
+    EXEC SQL EXECUTE 
+         begin
+            ordercusti_retrieve.open_cur1(:ordercustitem_cursor1,
+                                    :l_cust_order_nbr);
+         end;       
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("ordercustitem_next1open");
+    corder_has_cursor = corder_key;
+  }
+  corder_last = 0;
+
+  EXEC SQL FETCH  :ordercustitem_cursor1
+             INTO   :new;
+
+  if (sqlca.sqlcode == 0)
+  {
+    corder_count += 1;
+    corder_last   = 1;
+    ordercustitem_copy(p, &new);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    ordercustitem_close_cursor();
+    return 1;
+  }
+  icrash("ordercustitem_next1fetch");
+}
+
+ordercustitem_copy(p, q)
+register struct ordercustitem  *p;
+register struct ordercustitem *q;
+{
+  p->cust_item_nbr       = q->cust_item_nbr;
+  p->cust_order_nbr       = q->cust_order_nbr;
+  p->ordered_qty = q->ordered_qty;
+  p->ratio = q->ratio;
+  p->assign_tote_id  = q->assign_tote_id;
+  p->picked_qty   = q->picked_qty;
+  p->actual_tote_id  = q->actual_tote_id;
+  p->picker_id  = q->picker_id;
+      
+  memcpy(p->sku_no,    q->sku_no,    5);
+  memcpy(p->pick_location, q->pick_location, 6);
+  memcpy(p->descr, q->descr, 30);
+  memcpy(p->work_code,    q->work_code,    11);
+  memcpy(p->merch_type,    q->merch_type,    1);
+  memcpy(p->pick_datetime,    q->pick_datetime,   11);
+    
+  return 0;
+}
+
+ordercustitem_close_cursor()
+{
+  if (corder_has_cursor >= 0)
+  {
+    switch (corder_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE :ordercustitem_cursor0;
+              break;
+      case 1:
+              EXEC SQL CLOSE :ordercustitem_cursor1;
+              break;
+    }
+  }
+  corder_last = 0;
+  corder_has_cursor = -1;
+  return 0;
+}

@@ -1,0 +1,683 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Pick File Subroutines.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/07/95   |  tjt  Original implementation.
+ *  12/05/95   |  tjt  Add zone as data field.
+ *  07/12/99   |  Informix to Oracle Conversion By Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char pick_ec[] = "%Z% %M% %I% (%G% - %U%)";
+#define SQLNOTFOUND 1403
+
+struct pk_item
+{
+   long  pk_ref;
+   short pk_pl;
+   long  pk_on;
+   short pk_module;
+   short pk_zone;
+   short pk_ordered;
+   short pk_picked;
+   short pk_flags;
+   long  pk_datetime;
+   long  pk_box;
+   char  pk_sku[15];
+   char  pk_ptext[32];
+   char  pk_lot[15];
+};
+struct pk_item2
+{
+   long  pk_ref;
+   short pk_pl;
+   long  pk_on;
+   short pk_module;
+   short pk_zone;
+   short pk_ordered;
+   short pk_picked;
+   short pk_flags;
+   long  pk_datetime;
+   long  pk_box;
+   char  pk_sku[16];
+   char  pk_ptext[33];
+   char  pk_lot[16];
+};
+struct pk_item pk_lo, pk_hi;
+
+long pick_fd         = 0;
+long pick_open_mode  = 0;
+long pick_key        = 0;
+long pick_count      = 0;
+long pick_last       = 0;
+long pick_has_cursor = -1;
+
+long stime = 0;
+EXEC SQL BEGIN DECLARE SECTION;
+
+   SQL_CURSOR  pick_cursor0;              /* No Key */
+   SQL_CURSOR  pick_cursor1;              /* pl + on + Module no */
+   SQL_CURSOR  pick_cursor2;              /* pl + on + box       */
+   SQL_CURSOR  pick_cursor3;              /* pl + on + zone      */
+   SQL_CURSOR  pick_cursor4;              /* sku update */ 
+   SQL_CURSOR  pick_cursor5;              /* reference no */
+
+EXEC SQL END DECLARE SECTION;
+
+EXEC SQL INCLUDE SQLCA;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+pick_open_o(mode)
+register long mode;
+{
+  pick_fd = 1;
+
+  pick_open_mode  = mode;
+  pick_key        = 0;
+  pick_count      = 0;
+  pick_last       = 0;
+  pick_has_cursor = -1;
+  pick_setkey_o(0);
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+pick_close_o()
+{
+  if (pick_has_cursor >= 0) pick_close_cursor();
+
+  pick_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+pick_close_cursor()
+{
+  if (pick_has_cursor >= 0)
+  {
+    switch (pick_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE :pick_cursor0;
+              /* if (sqlca.sqlcode) icrash("pick_close_cursor 0"); */
+              break;
+      case 1:
+              EXEC SQL CLOSE :pick_cursor1;
+              /* if (sqlca.sqlcode) icrash("pick_close_cursor 1"); */
+              break;
+      case 2:
+              EXEC SQL CLOSE :pick_cursor2;
+              /* if (sqlca.sqlcode) icrash("pick_close_cursor 2"); */
+              break;
+      case 3:
+              EXEC SQL CLOSE :pick_cursor3;
+              /* if (sqlca.sqlcode) icrash("pick_close_cursor 3"); */
+              break;
+      case 4:
+              EXEC SQL CLOSE :pick_cursor4;
+              /* if (sqlca.sqlcode) icrash("pick_close_cursor 4"); */
+              break;
+      case 5:
+              EXEC SQL close :pick_cursor5;
+              /* if (sqlca.sqlcode) icrash("pick_close_cursor 5"); */
+              break;
+    }
+  }
+  pick_has_cursor = -1;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+pick_setkey_o(n)
+register long n;
+{
+
+  if (pick_has_cursor >= 0) pick_close_cursor();
+
+
+  pick_key   = n < 0 || n > 5 ? 0 : n;   
+  pick_count = 0;
+  pick_last  = 0;
+  
+  pk_lo.pk_ref    = 0;
+  pk_lo.pk_pl     = 1;
+  pk_lo.pk_on     = 0;
+  pk_lo.pk_module = 0;
+  pk_lo.pk_zone   = 0;
+  pk_lo.pk_box    = 0;
+  memset(pk_lo.pk_sku, 0x20, 15);
+  
+  pk_hi.pk_ref    = 0x7fffffff;
+  pk_hi.pk_pl     = 0x7fff;
+  pk_hi.pk_on     = 0x7fffffff;
+  pk_hi.pk_module = 0x7fff;
+  pk_hi.pk_zone   = 0x7fff;
+  pk_hi.pk_box    = 0x7fffffff;
+  memset(pk_hi.pk_sku, 0x7f, 15);
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+pick_startkey_o(p)
+struct pk_item *p;
+{
+  if (pick_has_cursor >= 0) pick_close_cursor(); 
+
+  if (pick_key > 5) pick_key -= 6;
+    
+  pick_count = 0;
+  pick_last  = 0;
+  
+  memcpy(&pk_lo, p, sizeof(struct pk_item));
+  memcpy(&pk_hi, p, sizeof(struct pk_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+pick_stopkey_o(p)
+struct pk_item *p;
+{
+  memcpy(&pk_hi, p, sizeof(struct pk_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+pick_read_o(p, mode)
+register struct pk_item *p;
+register long mode;
+{
+  pick_startkey_o(p);
+  pick_stopkey_o(p);
+  return pick_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Direct Read On Reference Number
+ *-------------------------------------------------------------------------*/
+pick_direct_o(p, mode, ref)
+register struct pk_item *p;
+register long mode;
+register long ref;
+{  
+  pick_setkey_o(5);
+  pk_lo.pk_ref = pk_hi.pk_ref = ref;
+  p->pk_ref=ref;
+  return pick_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *-------------------------------------------------------------------------*/
+pick_next_o(p, mode)
+register struct pk_item *p;
+register long mode;
+{  
+  switch (pick_key)
+  {
+    case 0:  return pick_next0(p);
+    case 1:  return pick_next1(p);
+    case 2:  return pick_next2(p);
+    case 3:  return pick_next3(p);
+    case 4:  return pick_next4(p);
+    case 5:  return pick_next5(p);
+  }
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key 
+ *-------------------------------------------------------------------------*/
+pick_next0(p)
+register struct pk_item *p;
+{  
+  struct pk_item2 work;
+  
+  if (!pick_count)
+  {
+    if (pick_has_cursor >= 0) pick_close_cursor(); 
+
+    EXEC SQL ALLOCATE :pick_cursor0;
+  
+    EXEC SQL EXECUTE 
+         begin
+            picks_retrieve.open_cur0(:pick_cursor0);
+         end;       
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("pick_next0 open");
+    pick_has_cursor = pick_key;
+  }
+  pick_last = 0;
+  
+  EXEC SQL FETCH :pick_cursor0 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    pick_count += 1;
+    pick_last   = 1;
+    pick_copy(p, &work);
+    
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND)
+  {
+    pick_close_cursor();
+    return 1;
+  }
+  icrash("pick_next0 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline, Order
+ *-------------------------------------------------------------------------*/
+pick_next1(p)
+register struct pk_item *p;
+{  
+  struct pk_item2 new;
+  int l_pi_pl,l_pi_on; 
+  if (!pick_count)
+  {
+     if (pick_has_cursor >= 0) pick_close_cursor(); 
+
+    EXEC SQL ALLOCATE :pick_cursor1;
+
+    l_pi_pl=p->pk_pl;
+    l_pi_on=p->pk_on;
+
+    EXEC SQL EXECUTE 
+     begin
+     picks_retrieve.open_cur1(:pick_cursor1,:l_pi_pl,:l_pi_on);
+     end;       
+    END-EXEC;
+    pick_has_cursor = pick_key;
+   }
+   pick_last = 0;
+  
+   EXEC SQL FETCH :pick_cursor1 into :new;
+  
+   if (sqlca.sqlcode == 0)
+   {
+    pick_count += 1;
+    pick_last   = 1;
+    pick_copy(p, &new);
+    return 0;
+   }
+   else if (sqlca.sqlcode == SQLNOTFOUND)
+   {
+    pick_close_cursor();
+    return 1;
+   }
+   icrash("pick_next1 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline, Order, and Box Number For Update
+ *-------------------------------------------------------------------------*/
+pick_next2(p)
+register struct pk_item *p;
+{  
+struct pk_item2 new;
+int l_pi_pl,l_pi_on,l_pk_lo,l_pk_hi;
+  
+  if (!pick_count)
+  {
+     if (pick_has_cursor >= 0) pick_close_cursor(); 
+
+    EXEC SQL ALLOCATE :pick_cursor2;
+
+    l_pi_pl=p->pk_pl;
+    l_pi_on=p->pk_on;
+    l_pk_lo=pk_lo.pk_box;
+    l_pk_hi=pk_hi.pk_box;
+
+    EXEC SQL EXECUTE 
+         begin
+            picks_retrieve.open_cur2(:pick_cursor2,:l_pi_pl,:l_pi_on,
+                                     :l_pk_lo,:l_pk_hi);
+         end;       
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("pick_next2 open");
+    pick_has_cursor = pick_key;
+  }
+  pick_last = 0;
+  
+  EXEC SQL FETCH :pick_cursor2 INTO :new;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    pick_count += 1;
+    pick_last   = 1;
+    pick_copy(p, &new);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    pick_close_cursor();
+    return 1;
+  }
+  icrash("pick_next2 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Pick Record Pickline, Order and Zone For Update
+ *-------------------------------------------------------------------------*/
+pick_next3(p)
+register struct pk_item *p;
+{  
+  struct pk_item2 new;
+  int l_pi_pl,l_pi_on,l_pk_lo,l_pk_hi;
+  
+  if (!pick_count)
+  {
+    if (pick_has_cursor >= 0) pick_close_cursor(); 
+
+    EXEC SQL ALLOCATE :pick_cursor3;
+
+    l_pi_pl=p->pk_pl;
+    l_pi_on=p->pk_on;
+    l_pk_lo=p->pk_zone;
+    l_pk_hi=p->pk_zone;
+
+    EXEC SQL EXECUTE 
+         begin
+            picks_retrieve.open_cur3(:pick_cursor3,:l_pi_pl,:l_pi_on,
+                                     :l_pk_lo,:l_pk_hi);
+         end;       
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("pick_next3 open");
+    pick_has_cursor = pick_key;
+  }
+  pick_last = 0;
+  
+  EXEC SQL FETCH :pick_cursor3 into :new;
+
+  if (sqlca.sqlcode == 0)
+  {
+    pick_count += 1;
+    pick_last   = 1;
+    pick_copy(p, &new);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    pick_close_cursor();
+    return 1;
+  }
+  icrash("pick_next3 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Pick Record On SKU For Update
+ *-------------------------------------------------------------------------*/
+pick_next4(p)
+register struct pk_item *p;
+{  
+struct pk_item2 new;
+char   l_pk_sku[16];  
+
+ if (!pick_count)
+ {
+     if (pick_has_cursor >= 0) pick_close_cursor(); 
+
+    EXEC SQL ALLOCATE :pick_cursor4;
+
+    memcpy(l_pk_sku,p->pk_sku,15);
+    l_pk_sku[15]='\0';
+
+    EXEC SQL EXECUTE 
+         begin
+
+            picks_retrieve.open_cur4(:pick_cursor4,:l_pk_sku);
+
+         end;       
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("pick_next4 open");
+
+    pick_has_cursor = pick_key;
+  }
+  pick_last = 0;
+  
+  EXEC SQL FETCH :pick_cursor4 into :new;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    pick_count += 1;
+    pick_last   = 1;
+    pick_copy(p, &new);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    pick_close_cursor();
+    return 1;
+  }
+  icrash("pick_next4 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Pick Record On Reference Number For Update
+ *-------------------------------------------------------------------------*/
+pick_next5(p)
+register struct pk_item *p;
+{  
+  struct pk_item2 new;
+  int l_pk_ref;
+  if (!pick_count)
+  {
+     if (pick_has_cursor >= 0) pick_close_cursor(); 
+
+    EXEC SQL ALLOCATE :pick_cursor5;
+
+    l_pk_ref=p->pk_ref;
+
+    EXEC SQL EXECUTE 
+         BEGIN
+
+            picks_retrieve.open_cur5(:pick_cursor5,:l_pk_ref);
+
+         END;       
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("pick_next5 open");
+
+    pick_has_cursor = pick_key;
+  }
+  pick_last = 0;
+  
+  EXEC SQL FETCH :pick_cursor5 into :new;
+  if (sqlca.sqlcode == 0)
+  {
+    pick_count += 1;
+    pick_last   = 1;
+    pick_copy(p, &new);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    pick_close_cursor();
+    return 1;
+  }
+  icrash("pick_next5 fetch");
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field
+ *-------------------------------------------------------------------------*/
+pick_copy(p, q)
+register struct pk_item  *p;
+register struct pk_item2 *q;
+{
+   p->pk_ref      = q->pk_ref;
+   p->pk_pl       = q->pk_pl;
+   p->pk_on       = q->pk_on;
+   p->pk_module   = q->pk_module;
+   p->pk_zone     = q->pk_zone;
+   p->pk_ordered  = q->pk_ordered;
+   p->pk_picked   = q->pk_picked;
+   p->pk_flags    = q->pk_flags;
+   p->pk_datetime = q->pk_datetime;
+   p->pk_box      = q->pk_box;
+   
+   memcpy(p->pk_sku,   q->pk_sku,   15);
+   memcpy(p->pk_ptext, q->pk_ptext, 32);
+   memcpy(p->pk_lot,   q->pk_lot,   15);
+   
+   return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Copy Field by Field from q to p
+ *  This function is used for the purpose inserting and updating rows
+ *  because it requires null at the end of the string fields
+ *-------------------------------------------------------------------------*/
+pick_copy_reverse(p, q)
+register struct pk_item  *p;
+register struct pk_item2 *q;
+{
+   q->pk_ref      = p->pk_ref;
+   q->pk_pl       = p->pk_pl;
+   q->pk_on       = p->pk_on;
+   q->pk_module   = p->pk_module;
+   q->pk_zone     = p->pk_zone;
+   q->pk_ordered  = p->pk_ordered;
+   q->pk_picked   = p->pk_picked;
+   q->pk_flags    = p->pk_flags;
+   q->pk_datetime = p->pk_datetime;
+   q->pk_box      = p->pk_box;
+   
+   memcpy(q->pk_sku,   p->pk_sku,   15);
+   memcpy(q->pk_ptext, p->pk_ptext, 32);
+   memcpy(q->pk_lot,   p->pk_lot,   15);
+   q->pk_sku[15]   = '\0';
+   q->pk_ptext[32] = '\0';
+   q->pk_lot[15]   = '\0';
+   return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+pick_write_o(p)
+register struct pk_item *p;
+{
+     long pk_ref;
+     struct pk_item2 new;
+
+     pick_copy_reverse(p,&new);
+     /* Statements of Populating reference No */
+
+     EXEC SQL SELECT pick_reference.nextval
+              INTO   :pk_ref
+              FROM   dual;
+
+     /* Statements of Populating Reference No End Here */
+
+     EXEC SQL INSERT INTO picks (
+     pi_pl   ,     pi_on  ,     pi_module, 
+     pi_zone , pi_ordered ,     pi_picked, 
+     pi_flags, pi_datetime,        pi_box, 
+     pi_sku  , pi_ptext   ,        pi_lot,
+     pi_reference)
+     values (
+     :new.pk_pl   , :new.pk_on      , :new.pk_module, 
+     :new.pk_zone , :new.pk_ordered , :new.pk_picked, 
+     :new.pk_flags, :new.pk_datetime, :new.pk_box,
+     :new.pk_sku  , :new.pk_ptext   , :new.pk_lot,
+     :pk_ref     );
+
+
+     if (sqlca.sqlcode) icrash("pick_write execute");
+     return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+pick_update_o(p)
+struct pk_item *p;
+{ 
+  int l_pk_ref;
+  struct pk_item2 new;
+  if (pick_last > 0)
+  {
+    pick_copy_reverse(p, &new);
+    l_pk_ref=p->pk_ref;
+    pick_last = 0;
+    EXEC SQL UPDATE picks 
+    SET      pi_pl           =  :new.pk_pl,
+             pi_on           =  :new.pk_on,
+             pi_module       =  :new.pk_module, 
+             pi_zone         =  :new.pk_zone, 
+             pi_ordered      =  :new.pk_ordered, 
+             pi_picked       =  :new.pk_picked,
+             pi_flags        =  :new.pk_flags, 
+             pi_datetime     =  :new.pk_datetime, 
+             pi_box          =  :new.pk_box, 
+             pi_sku          =  :new.pk_sku, 
+             pi_ptext        =  :new.pk_ptext, 
+             pi_lot          =  :new.pk_lot
+    WHERE  pi_reference = :l_pk_ref;
+    if (sqlca.sqlcode) icrash("pick_update 0");
+    return 0;
+   }
+  krash("pick_update", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+pick_delete_o(p)
+struct pk_item *p;
+{
+   if (pick_last > 0)
+   {
+    pick_last = 0;
+   
+    EXEC SQL DELETE  FROM picks 
+             WHERE   pi_reference = :p->pk_ref;
+    if (sqlca.sqlcode) icrash("pick_delete");
+    return 0;
+   }
+  krash("pick_delete", "no active record", 1);
+}
+
+/* end of pick.pc  */
+
+pick_search(p)
+struct pk_item *p;
+{  
+    struct pk_item2 new;
+    int l_pi_pl,l_pi_on,l_pi_module;
+
+    if (pick_has_cursor >= 0) pick_close_cursor(); 
+
+    EXEC SQL ALLOCATE :pick_cursor1;
+
+    l_pi_pl=p->pk_pl;
+    l_pi_on=p->pk_on;
+    l_pi_module=p->pk_module;
+
+    EXEC SQL EXECUTE 
+         begin
+            picks_retrieve.open_cur6(:pick_cursor1,:l_pi_pl,
+                                     :l_pi_on,:l_pi_module);
+         end;       
+    END-EXEC;
+   if (sqlca.sqlcode == 0)
+   {
+    pick_copy(p, &new);
+    EXEC SQL CLOSE :pick_cursor1;
+    return 0;
+   }
+   else if (sqlca.sqlcode == SQLNOTFOUND)
+   {
+    return 1;
+   }
+   icrash("pick_search fetch");
+}

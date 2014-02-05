@@ -1,0 +1,256 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Queue File Subroutines.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   |  tjt  Original implementation.
+ *  07/27/99   |  Informix to Oracle Conversion By Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char queue_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct qq_item
+{
+   long  qq_ref;
+   long  qq_time;
+   char  qq_text[255];
+
+};
+
+struct qq_item qq_lo, qq_hi;
+long queue_last = 0;
+
+long queue_fd         = 0;
+long queue_open_mode  = 0;
+long queue_key        = 0;
+long queue_count      = 0;
+long queue_has_cursor = 0;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+SQL_CURSOR qq_cursor1;               /* ref key                    */
+
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+queue_open_o(mode)
+register long mode;
+{
+  queue_fd   = 1;
+
+  queue_open_mode  = mode;
+  queue_key        = 0; 
+  queue_count      = 0;
+  queue_last       = 0;
+  queue_has_cursor = 0;
+  queue_setkey_o(1);
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+queue_close_o()
+{
+  if (queue_has_cursor) queue_close_cursor();
+
+  queue_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+queue_close_cursor()
+{
+  if (queue_has_cursor)
+  {
+    EXEC SQL CLOSE :qq_cursor1;
+    if (sqlca.sqlcode) icrash("queue_close_cursor");
+  }
+  queue_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+queue_setkey_o(n)
+register long n;
+{
+  if (queue_has_cursor) queue_close_cursor();
+
+  queue_key   = 1;   
+  queue_count = 0;
+
+  qq_lo.qq_ref = 1;
+  qq_hi.qq_ref = 0x7fffffff;
+  
+  queue_last  = 0;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+queue_startkey_o(p)
+struct qq_item *p;
+{
+  if (queue_has_cursor) queue_close_cursor();
+
+  queue_count = 0;
+  
+  memcpy(&qq_lo, p, sizeof(struct qq_item));
+  memcpy(&qq_hi, p, sizeof(struct qq_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+queue_stopkey_o(p)
+struct qq_item *p;
+{
+  memcpy(&qq_hi, p, sizeof(struct qq_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+queue_read_o(p, mode)
+register struct qq_item *p;
+register long mode;
+{
+  queue_startkey_o(p);
+  queue_stopkey_o(p);
+  return queue_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Queue Time
+ *-------------------------------------------------------------------------*/
+queue_next_o(p, mode)
+register struct qq_item *p;
+register long mode;
+{  
+  struct qq_item work;
+  int l_q_ref;
+  if (!queue_count)
+  {
+    if (queue_has_cursor) queue_close_cursor();
+
+    EXEC SQL ALLOCATE :qq_cursor1;
+
+    /* l_q_ref = p->qq_ref; */
+
+    EXEC SQL EXECUTE
+    begin
+       queue_retrieve.open_cur(:qq_cursor1); /* ,:l_q_ref); */
+    end;
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("queue_open_cursor");
+
+    queue_has_cursor = 1;
+
+  }
+  queue_last = 0;
+
+  EXEC SQL FETCH :qq_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    queue_count += 1;
+    queue_last   = work.qq_ref;
+    memcpy(p, &work, sizeof(struct qq_item));
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    queue_close_cursor();
+    return 1;
+  }
+  icrash("queue_next");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *  A New Sequence is created for populating queue_ref and the
+ *  value from C program is Ignored. Sequence Name is queue_seq
+ *  and the SQL script name is queue_seq.sql
+ *-------------------------------------------------------------------------*/
+queue_write_o(p)
+struct qq_item *p;
+{
+  struct qq_item work;
+  int l_q_ref;
+  p->qq_time = time(0);
+  memcpy(&work, p, sizeof(struct qq_item));
+
+  EXEC SQL SELECT queue_seq.nextval
+           INTO   :l_q_ref
+           FROM   dual;
+
+  work.qq_text[254]='\0';
+
+  EXEC SQL INSERT INTO 
+  queue  (queue_ref,queue_time, queue_text) 
+  VALUES (:l_q_ref,:work.qq_time, :work.qq_text);
+
+  if (sqlca.sqlcode) icrash("queue_write");
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+queue_update_o(p)
+struct qq_item *p;
+{
+  struct qq_item work;
+  if (queue_last > 0)
+  {
+     queue_has_cursor = 1;
+     memcpy(&work, p, sizeof(struct qq_item));
+     work.qq_text[254]='\0';
+     EXEC SQL UPDATE queue
+     SET  queue_time  = :work.qq_time,
+          queue_text  = :work.qq_text
+     where queue_ref  = :queue_last;
+
+    queue_last = 0;
+ 
+    if (sqlca.sqlcode) icrash("queue_update");
+  }
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+queue_delete_o()
+{
+  if (queue_last > 0)
+  {
+    EXEC  SQL DELETE 
+    FROM  queue 
+    WHERE queue_ref = :queue_last;
+  
+    queue_last = 0;
+    
+    if (sqlca.sqlcode) icrash("queue_delete");
+  }
+  return 0;
+}
+
+/* end of queue.pc  */
+
+

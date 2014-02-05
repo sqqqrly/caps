@@ -1,0 +1,498 @@
+ 
+ 
+/*                            Revision history                         |
+ *-------------+-------------------------------------------------------*
+ * Change Date |            Author & Description                       |
+ *-------------+-------------------------------------------------------*
+ *  10/07/95   |  tjt  Original implementation.
+ *  07/07/99   |  Informix to Oracle Conversion By Ravi Jagannathan
+ *--------------------------------------------------------------------*/
+#define SQLNOTFOUND 1403
+
+EXEC SQL INCLUDE SQLCA;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+    SQL_CURSOR order_cursor0;
+    SQL_CURSOR order_cursor1;
+    SQL_CURSOR order_cursor2;
+
+EXEC SQL END DECLARE SECTION;
+
+
+static char order_ec[] = "%Z% %M% %I% (%G% - %U%)";
+struct ord_item
+{
+   short ord_pl;
+   long  ord_on;
+   short ord_no_picks;
+   short ord_no_units;
+   long  ord_datetime;
+   short ord_elapsed;
+   long  ord_picker;
+   char  ord_pri[1];
+   char  ord_status[1];
+   char  ord_repick[1];
+   char  ord_grp[6];
+   char  ord_con[15];
+};
+struct ord_item2
+{
+   short ord_pl;
+   long  ord_on;
+   short ord_no_picks;
+   short ord_no_units;
+   long  ord_datetime;
+   short ord_elapsed;
+   long  ord_picker;
+   char  ord_pri[2];
+   char  ord_status[2];
+   char  ord_repick[2];
+   char  ord_grp[7];
+   char  ord_con[16];
+};
+
+
+struct ord_item ord_lo, ord_hi;
+
+long order_fd         = 0;
+long order_open_mode  = 0;
+long order_key        = 0;
+long order_count      = 0;
+long order_last       = 0;
+long order_has_cursor = -1;
+
+/*---------------------------------------------------------------------*
+ *  Open Database
+ *--------------------------------------------------------------------*/
+order_open_o(mode)
+register long mode;
+{
+  order_fd = 1;
+
+  order_open_mode  = mode;
+  order_key        = 0;
+  order_count      = 0;
+  order_last       = 0;
+  order_has_cursor = -1;
+  order_setkey_o(0);
+  return 1;
+}
+/*---------------------------------------------------------------------*
+ *  Close Database
+ *--------------------------------------------------------------------*/
+order_close_o()
+{
+  if (order_has_cursor >= 0) order_close_cursor();
+  order_fd = 0;
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Set Database Access Key
+ *--------------------------------------------------------------------*/
+order_setkey_o(n)
+register long n;
+{
+  if (order_has_cursor >= 0) order_close_cursor(); 
+  order_key   = n < 0 || n > 2 ? 0 : n;   
+  order_count = 0;
+  order_last  = 0;
+  
+  ord_lo.ord_pl = 1;
+  ord_lo.ord_on = 0;
+
+  ord_hi.ord_pl = 0x7fff;
+  ord_hi.ord_on = 0x7fffffff;
+  
+  memset(ord_lo.ord_con, 0x20, 15);
+  memset(ord_hi.ord_con, 0x7f, 15);
+  
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *--------------------------------------------------------------------*/
+order_startkey_o(p)
+struct ord_item *p;
+{
+  if (order_has_cursor >= 0) order_close_cursor(); 
+
+  if (order_key > 2) order_key -= 3;
+  
+  order_count = 0;
+  order_last  = 0;
+  
+  memcpy(&ord_lo, p, sizeof(struct ord_item));
+  memcpy(&ord_hi, p, sizeof(struct ord_item));
+
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *--------------------------------------------------------------------*/
+order_stopkey_o(p)
+struct ord_item *p;
+{
+  memcpy(&ord_hi, p, sizeof(struct ord_item));
+
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Read Database Row
+ *--------------------------------------------------------------------*/
+order_read_o(p, mode)
+struct ord_item *p;
+{
+  long ret;
+  
+  order_startkey_o(p);
+  order_stopkey_o(p);
+  ret = order_next_o(p, mode);
+  if (!(order_open_mode & mode)) order_close_cursor(); 
+  return ret;
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *--------------------------------------------------------------------*/
+order_next_o(p, mode)
+register struct ord_item *p;
+register long mode;
+{  
+  switch (order_key)
+  {
+    case 0:  return order_next0(p);
+    case 1:  return order_next1(p);
+    case 2:  return order_next2(p);
+  }
+  return 1;
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key 
+ *--------------------------------------------------------------------*/
+order_next0(p)
+register struct ord_item *p;
+{  
+  struct ord_item2 new;
+  
+  if (!order_count)
+  {
+    if (order_has_cursor >= 0) order_close_cursor(); 
+
+    EXEC SQL ALLOCATE :order_cursor0;
+
+    EXEC SQL EXECUTE 
+         begin
+            order_retrieve.open_cur0(:order_cursor0);
+         end;       
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("order_next0 open");
+    order_has_cursor = order_key;
+   }
+    order_last = 0;
+
+    EXEC SQL FETCH  :order_cursor0
+             INTO   :new;
+
+   if (sqlca.sqlcode == 0)
+   {
+      order_count += 1;
+      order_last   = 1;
+      order_copy(p, &new);
+      return 0;
+   }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    order_close_cursor();
+    return 1;
+  }
+  icrash("order_next0 fetch");
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Order Number 
+ *--------------------------------------------------------------------*/
+order_next1(p)
+register struct ord_item *p;
+{  
+  struct ord_item2 new;
+  int l_ord_pl;
+  int l_ord_on;
+  if (!order_count)
+  {
+    if (order_has_cursor >= 0) order_close_cursor(); 
+
+    EXEC SQL ALLOCATE :order_cursor1;
+
+    l_ord_pl=p->ord_pl;
+    l_ord_on=p->ord_on;
+    EXEC SQL EXECUTE 
+         begin
+            order_retrieve.open_cur1(:order_cursor1,
+                                    :l_ord_pl,
+                                    :l_ord_on);
+         end;       
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("order_next1open");
+    order_has_cursor = order_key;
+  }
+  order_last = 0;
+
+  EXEC SQL FETCH  :order_cursor1
+             INTO   :new;
+
+  if (sqlca.sqlcode == 0)
+  {
+    order_count += 1;
+    order_last   = 1;
+    order_copy(p, &new);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    order_close_cursor();
+    return 1;
+  }
+  icrash("order_next1fetch");
+}
+/*---------------------------------------------------------------------*
+ *  Fetch Next Database Row On Pickline and Customer Order Number  
+ *  
+ *--------------------------------------------------------------------*/
+order_next2(p)
+register struct ord_item *p;
+{  
+ struct ord_item2 new;
+ short l_ord_pl;
+ char  l_ord_con[16];
+ 
+  if (!order_count)
+  {
+    if (order_has_cursor >= 0) order_close_cursor(); 
+
+    EXEC SQL ALLOCATE :order_cursor2;
+
+    l_ord_pl=p->ord_pl;
+    memcpy(l_ord_con,p->ord_con,15);
+    l_ord_con[15]='\0';
+
+    EXEC SQL EXECUTE 
+         begin
+            order_retrieve.open_cur2(:order_cursor2,
+                                    :l_ord_pl,
+                                    :l_ord_con);
+         end;       
+    END-EXEC;
+
+    if (sqlca.sqlcode) icrash("order_next2 open");
+    order_has_cursor = order_key;
+  }
+  order_last = 0;
+
+  EXEC SQL FETCH  :order_cursor2 INTO :new;
+
+  if (sqlca.sqlcode == 0)
+  {
+    order_count += 1;
+    order_last   = 1;
+    order_copy(p, &new);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    order_close_cursor();
+    return 1;
+  }
+  icrash("order_next2 fetch");
+}
+/*---------------------------------------------------------------------*
+ *  Copy Field by Field
+ *--------------------------------------------------------------------*/
+order_copy(p, q)
+register struct ord_item  *p;
+register struct ord_item2 *q;
+{
+  p->ord_pl       = q->ord_pl;
+  p->ord_on       = q->ord_on;
+  p->ord_no_picks = q->ord_no_picks;
+  p->ord_no_units = q->ord_no_units;
+  p->ord_datetime = q->ord_datetime;
+  p->ord_elapsed  = q->ord_elapsed;
+  p->ord_picker   = q->ord_picker;
+      
+  memcpy(p->ord_pri,    q->ord_pri,    1);
+  memcpy(p->ord_status, q->ord_status, 1);
+  memcpy(p->ord_repick, q->ord_repick, 1);
+  memcpy(p->ord_grp,    q->ord_grp,    6);
+  memcpy(p->ord_con,    q->ord_con,   15);
+    
+  return 0;
+}
+
+/*---------------------------------------------------------------------*
+ *  Copy Field by Field
+ *  from p Sturucture to q used for interacting with oracle 
+ *--------------------------------------------------------------------*/
+order_copy_reverse(p, q)
+register struct ord_item  *p;
+register struct ord_item2 *q;
+{
+  q->ord_pl       = p->ord_pl;
+  q->ord_on       = p->ord_on;
+  q->ord_no_picks = p->ord_no_picks;
+  q->ord_no_units = p->ord_no_units;
+  q->ord_datetime = p->ord_datetime;
+  q->ord_elapsed  = p->ord_elapsed;
+  q->ord_picker   = p->ord_picker;
+      
+  memcpy(q->ord_pri,    p->ord_pri,    1);
+  memcpy(q->ord_status, p->ord_status, 1);
+  memcpy(q->ord_repick, p->ord_repick, 1);
+  memcpy(q->ord_grp,    p->ord_grp,    6);
+  memcpy(q->ord_con,    p->ord_con,   15);
+  
+  q->ord_pri[1]    =  '\0';
+  q->ord_status[1] =  '\0';  
+  q->ord_repick[1] =  '\0';
+  q->ord_grp[6]    =  '\0';
+  q->ord_con[15]   =  '\0';
+
+  return 0;
+}
+/*---------------------------------------------------------------------*
+ *  Insert Database Row
+ *--------------------------------------------------------------------*/
+
+order_write_o(p)
+struct ord_item *p;
+{
+      struct ord_item2 work;
+      order_copy_reverse(p,&work);
+
+      EXEC SQL INSERT 
+      INTO  orders ( of_pl      , of_on      , of_no_picks, 
+                     of_no_units, of_datetime, of_elapsed ,
+                     of_picker  , of_pri     , of_status  , 
+                     of_repick  , of_grp     , of_con     )
+      VALUES  (:work.ord_pl      , :work.ord_on      ,  :work.ord_no_picks,
+               :work.ord_no_units, :work.ord_datetime,  :work.ord_elapsed ,
+               :work.ord_picker  , :work.ord_pri     ,  :work.ord_status  ,
+               :work.ord_repick  , :work.ord_grp     ,  :work.ord_con    );
+
+       if (sqlca.sqlcode) icrash("order_write execute");
+       return 0;
+  }
+
+/*---------------------------------------------------------------------*
+ *  Update Database
+ *--------------------------------------------------------------------*/
+
+order_update_o(p)
+register struct ord_item *p;
+{
+  struct ord_item2 new;
+  if (order_last)
+  {
+    order_copy_reverse(p,&new);
+    order_last = 0;
+    
+    EXEC  SQL UPDATE orders 
+    SET   of_pl       = :new.ord_pl      ,
+          of_on       = :new.ord_on      ,
+          of_no_picks = :new.ord_no_picks,
+          of_no_units = :new.ord_no_units,
+          of_datetime = :new.ord_datetime,
+          of_elapsed  = :new.ord_elapsed ,
+          of_picker   = :new.ord_picker  ,
+          of_pri      = :new.ord_pri     ,
+          of_status   = :new.ord_status  ,
+          of_repick   = :new.ord_repick  ,
+          of_grp      = :new.ord_grp     ,
+          of_con      = :new.ord_con 
+    WHERE of_pl = :new.ord_pl
+    AND   of_on = :new.ord_on;
+    if(sqlca.sqlcode) 
+         icrash("order_update ");
+    return 0;
+  }
+  krash("order_update", "no active record", 1);
+}
+
+/*---------------------------------------------------------------------*
+ *  Delete Database Row
+ *--------------------------------------------------------------------*/
+
+
+order_delete_o(p)
+register struct ord_item *p;
+{
+  struct ord_item2 new;
+  order_copy_reverse(p,&new);
+  if (order_last)
+  {
+    order_last = 0;
+
+    /* Removing the Rows from Remarks table */
+
+/*
+    EXEC SQL  DELETE FROM remarks 
+    WHERE     rmks_pl = :new.ord_pl
+    AND       rmks_on = :new.ord_on;
+    if (sqlca.sqlcode) 
+    {
+        icrash("order_delete from remarks");
+        return 0;
+    } 
+*/
+/* commented the above delete of remarks as there is no data in remarks
+table for ckcc
+*/
+
+    /* Removing the Rows from picks table */
+    EXEC SQL  DELETE FROM picks 
+    WHERE     pi_pl = :new.ord_pl
+    AND       pi_on = :new.ord_on;
+
+    if (sqlca.sqlcode) 
+    {
+       icrash("order_delete from picks");
+       return 0;
+    }
+    EXEC SQL  DELETE FROM orders 
+    WHERE     of_pl = :new.ord_pl
+    AND       of_on = :new.ord_on;
+
+    if (sqlca.sqlcode) icrash("order_delete 0");
+    return 0;
+   }
+  krash("order_delete", "no active record", 1);
+
+}
+
+/*---------------------------------------------------------------------*
+ *  Close Cursor
+ *--------------------------------------------------------------------*/
+order_close_cursor()
+{
+  if (order_has_cursor >= 0)
+  {
+    switch (order_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE :order_cursor0;
+              /* if (sqlca.sqlcode) icrash("order_close_cursor 0"); */
+              break;
+      case 1:
+              EXEC SQL CLOSE :order_cursor1;
+              /* if (sqlca.sqlcode) icrash("order_close_cursor 1"); */
+              break;
+      case 2:
+              EXEC SQL CLOSE :order_cursor2;
+              /* if (sqlca.sqlcode) icrash("order_close_cursor 2"); */
+              break;
+    }
+  }
+  order_last = 0;
+  order_has_cursor = -1;
+  return 0;
+}
+/* end of order.pc  */

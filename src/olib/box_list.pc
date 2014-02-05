@@ -1,0 +1,309 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Box Packing List Subroutines.
+ *
+ *  Note:           Has only one serial key.  Uses normal cursor to 
+ *                  retrieve records in order.  No locking is used.  Only
+ *                  one process is allowed to delete particular items.
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/06/95   |  tjt  Original implementation.
+ *  09/10/96   |  tjt  Add ref to write function.
+ *  07/22/99   |  Informix to Oracle Conversion By Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+#include <string.h>
+static char box_list_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct bpl_item
+{
+   long  bpl_ref;
+   long  bpl_time;
+   short bpl_copies;
+   short bpl_pl;
+   long  bpl_on;
+   long  bpl_box;
+   char  bpl_printer[8];
+};
+
+struct bpl_item2
+{
+   long  bpl_ref;
+   long  bpl_time;
+   short bpl_copies;
+   short bpl_pl;
+   long  bpl_on;
+   long  bpl_box;
+   char  bpl_printer[9];
+};
+
+struct bpl_item bpl_lo, bpl_hi;
+long box_list_last = 0;
+
+long box_list_fd         = 0;
+long box_list_open_mode  = 0;
+long box_list_key        = 0;
+long box_list_count      = 0;
+long box_list_has_cursor = 0;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+SQL_CURSOR box_list_cursor1;             /* ref key                        */
+ 
+EXEC SQL END DECLARE SECTION;
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+box_list_open_o(mode)
+register long mode;
+{
+  box_list_fd   = 1;
+  
+  box_list_open_mode  = mode;
+  box_list_key        = 0; 
+  box_list_count      = 0;
+  box_list_last       = 0;
+  box_list_has_cursor = 0;
+  box_list_setkey_o(1);
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+box_list_close_o()
+{
+  if (box_list_has_cursor) box_list_close_cursor();
+
+  box_list_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+box_list_close_cursor()
+{
+  if (box_list_has_cursor)
+  {
+    EXEC SQL CLOSE  :box_list_cursor1;
+    if (sqlca.sqlcode) icrash("box_list_close_cursor");
+  }
+  box_list_has_cursor = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+box_list_setkey_o(n)
+register long n;
+{
+  if (box_list_has_cursor) box_list_close_cursor();
+
+  box_list_key   = 1;   
+  box_list_count = 0;
+
+  bpl_lo.bpl_ref = 1;
+  bpl_hi.bpl_ref = 0x7fffffff;
+  
+  box_list_last  = 0;
+  
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+box_list_startkey_o(p)
+struct bpl_item *p;
+{
+  if (box_list_has_cursor) box_list_close_cursor();
+
+  box_list_count = 0;
+  
+  memcpy(&bpl_lo, p, sizeof(struct bpl_item));
+  memcpy(&bpl_hi, p, sizeof(struct bpl_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+box_list_stopkey_o(p)
+struct bpl_item *p;
+{
+  memcpy(&bpl_hi, p, sizeof(struct bpl_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+box_list_read_o(p, mode)
+register struct bpl_item *p;
+register long mode;
+{
+  box_list_startkey_o(p);
+  box_list_stopkey_o(p);
+  
+  return box_list_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Reference
+ *-------------------------------------------------------------------------*/
+box_list_next_o(p, mode)
+register struct bpl_item *p;
+register long mode;
+{  
+  struct bpl_item2 work;
+EXEC SQL BEGIN DECLARE SECTION;
+  int l_bpl_ref;
+EXEC SQL END DECLARE SECTION;
+  
+  if (!box_list_count)
+  {
+   if (box_list_has_cursor) box_list_close_cursor();
+
+   EXEC SQL ALLOCATE :box_list_cursor1;
+   l_bpl_ref=bpl_lo.bpl_ref;
+
+   EXEC SQL EXECUTE
+   begin 
+     box_list_retrieve.open_cur(:box_list_cursor1,:l_bpl_ref);
+   end;
+   END-EXEC;
+
+   if (sqlca.sqlcode) icrash("box_list_open_cursor");
+
+   box_list_has_cursor = 1;
+
+  }
+  box_list_last = 0;
+
+  EXEC SQL FETCH  :box_list_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    box_list_count += 1;
+    if (box_list_open_mode & mode) box_list_last = work.bpl_ref;
+    boxlist_copy(p, &work);
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) 
+  {
+    box_list_close_cursor();
+    return 1;
+  }
+  icrash("box_list_next");
+}
+boxlist_copy(p,q)
+struct bpl_item *p;
+struct bpl_item2 *q;
+{
+    p->bpl_ref   =  q->bpl_ref;
+    p->bpl_time  =  q->bpl_time;
+    p->bpl_copies=  q->bpl_copies;
+    p->bpl_pl    =  q->bpl_pl;
+    p->bpl_on    =  q->bpl_on;
+    p->bpl_box   =  q->bpl_box;
+    strcpy(p->bpl_printer,q->bpl_printer);
+}
+   
+boxlist_copy_reverse(p,q)
+struct bpl_item *p;
+struct bpl_item2 *q;
+{
+    q->bpl_ref   =  p->bpl_ref;
+    q->bpl_time  =  p->bpl_time;
+    q->bpl_copies=  p->bpl_copies;
+    q->bpl_pl    =  p->bpl_pl;
+    q->bpl_on    =  p->bpl_on;
+    q->bpl_box   =  p->bpl_box;
+    memcpy(q->bpl_printer,p->bpl_printer,8);
+    q->bpl_printer[8]='\0';
+}
+
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *  A New Sequence is created for populating bpl_ref and the
+ *  value from C program is Ignored. Sequence Name is box_list_seq
+ *  and the SQL script name is box_list_seq.sql
+ *-------------------------------------------------------------------------*/
+box_list_write_o(p)
+struct bpl_item *p;
+{
+  struct bpl_item2 work;
+  long l_bpl_ref;
+  p->bpl_time = time(0);
+
+  EXEC SQL SELECT box_list_seq.nextval 
+           INTO   :l_bpl_ref 
+           FROM   dual;
+
+  boxlist_copy_reverse(p,&work);
+
+  EXEC SQL INSERT INTO box_packing_list 
+  (bpl_ref, bpl_time, bpl_copies, bpl_pl, 
+   bpl_on , bpl_box , bpl_printer)
+  VALUES
+  (:l_bpl_ref, :work.bpl_time, :work.bpl_copies, :work.bpl_pl, 
+   :work.bpl_on,  :work.bpl_box,  :work.bpl_printer);
+
+  if (sqlca.sqlcode) icrash("box_list_write");
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+box_list_update_o(p)
+struct bpl_item *p;
+{
+  
+  struct bpl_item2 work;
+  if (box_list_last > 0)
+  {  
+   boxlist_copy_reverse(p,&work);
+
+   EXEC SQL UPDATE box_packing_list 
+   set  bpl_time     = :work.bpl_time, 
+        bpl_copies   = :work.bpl_copies, 
+        bpl_pl       = :work.bpl_pl, 
+        bpl_on       = :work.bpl_on, 
+        bpl_box      = :work.bpl_box, 
+        bpl_printer  = :work.bpl_printer
+   where bpl_ref     = :box_list_last;
+
+   box_list_last = 0;
+ 
+   if (sqlca.sqlcode) icrash("box_list_update");
+  }
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+box_list_delete_o()
+{
+  if (box_list_last > 0)
+  {
+    EXEC SQL DELETE FROM box_packing_list 
+             WHERE  bpl_ref = :box_list_last;
+  
+    box_list_last = 0;
+    
+    if (sqlca.sqlcode) icrash("box_list_delete");
+  }
+  return 0;
+}
+
+/* end of box_list.ec  */
+
+

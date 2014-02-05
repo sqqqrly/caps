@@ -1,0 +1,36 @@
+/************************************************************************
+char *SCCS_DATA = "@(#)log_error.c	1.4";
+************************************************************************/
+/*
+#include stdio.h;
+#include <time.h>
+*/
+
+EXEC SQL INCLUDE SQLCA;
+
+/************************************************************************
+   Function Name: LogError
+  
+   Purpose: Writes an Error to the error log
+  
+ ************************************************************************/
+void LogError( char *szError )
+{
+	char szDateTime[60];
+	icrash( szError);
+/*
+	time_t t;
+
+	// Get the time, convert it to a string, strip the linefeed, 
+	// and print the date and time before each log entry.
+	time( &t );
+	strcpy( szDateTime, ctime( &t ) );
+	szDateTime[ strlen( szDateTime ) - 1 ] = 32;	
+	fputs( szDateTime, stderr );
+	fputs( szError, stderr );
+	if( szError[ strlen( szError ) - 1 ] != '\n' )
+		fputs( "\n", stderr );
+*/
+}
+
+/* end of log_error.c */

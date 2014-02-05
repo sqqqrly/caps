@@ -1,0 +1,374 @@
+/*-------------------------------------------------------------------------*
+ *  Source Code:    %M%
+ *-------------------------------------------------------------------------*
+ *  Version:        %I%
+ *  Version Date:   %G% - %U%
+ *  Source Date:    %H% - %T%
+ *
+ *  Description:    Picker File Subroutines.
+ *
+ *-------------------------------------------------------------------------*
+ *                            Revision history                             |
+ *-------------+-----------------------------------------------------------*
+ * Change Date |            Author & Description                           |
+ *-------------+-----------------------------------------------------------*
+ *  10/07/95   |  tjt  Original implementation.
+ *  07/23/99   |  Informix to Oracle Conversion by Ravi Jagannathan
+ *-------------------------------------------------------------------------*/
+static char picker_ec[] = "%Z% %M% %I% (%G% - %U%)";
+
+EXEC SQL INCLUDE SQLCA;
+
+#define SQLNOTFOUND 1403
+
+struct pkr_item
+{
+   long  picker_id;
+   char  last_name[16];
+   char  first_name[16];
+   char  middle_initial[2];
+   short underway_orders;
+   long  start_time;
+   long  current_time;
+   long  cur_order_count;
+   long  cur_lines;
+   long  cur_units;
+   long  cur_time;
+   long  cum_order_count;
+   long  cum_lines;
+   long  cum_units;
+   long  cum_time;
+};
+
+struct pkr_item pkr_lo, pkr_hi;
+long picker_last = 0;
+
+long picker_fd         = 0;
+long picker_open_mode  = 0;
+long picker_key        = 0;
+long picker_count      = 0;
+long picker_has_cursor = -1;
+
+EXEC SQL BEGIN DECLARE SECTION;
+
+ SQL_CURSOR  picker_cursor0;       /* no key                   */
+ SQL_CURSOR  picker_cursor1;       /* picker key               */
+
+EXEC SQL END DECLARE SECTION;
+
+
+/*-------------------------------------------------------------------------*
+ *  Open Database
+ *-------------------------------------------------------------------------*/
+picker_open_o(mode)
+register long mode;
+{
+  picker_fd = 1;
+
+  picker_open_mode  = mode;
+  picker_key        = 0; 
+  picker_count      = 0;
+  picker_last       = 0;
+  picker_has_cursor = -1;
+  picker_setkey_o(0);
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Database
+ *-------------------------------------------------------------------------*/
+picker_close_o()
+{
+  if (picker_has_cursor >= 0) picker_close_cursor();
+
+  picker_fd = 0;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Close Cursor
+ *-------------------------------------------------------------------------*/
+picker_close_cursor()
+{
+  if (picker_has_cursor >= 0)
+  {
+    switch (picker_has_cursor)
+    {
+      case 0:
+              EXEC SQL CLOSE :picker_cursor0;
+              if (sqlca.sqlcode) icrash("picker_close_cursor 0");
+              break;
+      case 1:
+              EXEC SQL CLOSE :picker_cursor1;
+              if (sqlca.sqlcode) icrash("picker_close_cursor 1");
+              break;
+    }
+   }
+  picker_has_cursor = -1;
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Set Database Access Key
+ *-------------------------------------------------------------------------*/
+picker_setkey_o(n)
+register long n;
+{
+  if (picker_has_cursor >= 0) picker_close_cursor();
+
+  picker_key   = (n & 1);   
+  picker_count = 0;
+  picker_last  = 0;
+  
+  pkr_lo.picker_id = 0;
+  pkr_hi.picker_id = 0x7fffffff;
+   
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Starting Key For Database Search
+ *-------------------------------------------------------------------------*/
+picker_startkey_o(p)
+struct pkr_item *p;
+{
+  if (picker_has_cursor >= 0) picker_close_cursor();
+
+  if (picker_key > 1) picker_key -= 2;
+  
+  picker_count = 0;
+  picker_last  = 0;
+  
+  memcpy(&pkr_lo, p, sizeof(struct pkr_item));
+  memcpy(&pkr_hi, p, sizeof(struct pkr_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Ending Key For Database Search
+ *-------------------------------------------------------------------------*/
+picker_stopkey_o(p)
+struct pkr_item *p;
+{
+  memcpy(&pkr_hi, p, sizeof(struct pkr_item));
+
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Read Database Row
+ *-------------------------------------------------------------------------*/
+picker_read_o(p, mode)
+register struct pkr_item *p;
+register long mode;
+{
+  picker_startkey_o(p);
+  picker_stopkey_o(p);
+  return picker_next_o(p, mode);
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row
+ *-------------------------------------------------------------------------*/
+picker_next_o(p, mode)
+register struct pkr_item *p;
+register long mode;
+{
+  switch (picker_key)
+  {
+    case 0:  return picker_next0(p);
+    case 1:  return picker_next1(p);
+  }
+  return 1;
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On No Key For Update
+ *-------------------------------------------------------------------------*/
+picker_next0(p)
+register struct pkr_item *p;
+{  
+  struct pkr_item work;
+  
+  if (!picker_count)
+  {
+    if (picker_has_cursor >= 0) picker_close_cursor();
+    
+    EXEC SQL ALLOCATE :picker_cursor0;
+    
+    EXEC SQL EXECUTE
+    begin
+       picker_retrieve.open_cur0(:picker_cursor0);
+    end;
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("picker_open_cursor 0");
+    
+    picker_has_cursor = picker_key;
+
+  }
+  picker_last = 0;
+  
+  EXEC SQL FETCH :picker_cursor0 INTO work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    picker_count += 1;
+    memcpy(p, &work, sizeof(struct pkr_item));
+    picker_last = 1;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("picker_next 0");
+}
+/*-------------------------------------------------------------------------*
+ *  Fetch Next Database Row On Picker ID For Update
+ *-------------------------------------------------------------------------*/
+picker_next1(p)
+register struct pkr_item *p;
+{  
+  struct pkr_item work;
+  int l_picker_id; 
+
+  if (!picker_count)
+  {
+    if (picker_has_cursor >= 0) picker_close_cursor();
+    
+    EXEC SQL ALLOCATE :picker_cursor1;
+    l_picker_id = p->picker_id;
+ 
+    EXEC SQL EXECUTE
+    begin
+       picker_retrieve.open_cur1(:picker_cursor1,:l_picker_id);
+    end;
+    END-EXEC;
+    if (sqlca.sqlcode) icrash("picker_open_cursor 1");
+    
+    picker_has_cursor = picker_key;
+
+  }
+  picker_last = 0;
+  
+  EXEC SQL FETCH :picker_cursor1 INTO :work;
+  
+  if (sqlca.sqlcode == 0)
+  {
+    picker_count += 1;
+    memcpy(p, &work, sizeof(struct pkr_item));
+    picker_last = 1;
+    return 0;
+  }
+  else if (sqlca.sqlcode == SQLNOTFOUND) return 1;
+  icrash("picker_next 1");
+}
+/*-------------------------------------------------------------------------*
+ *  Insert Database Row
+ *-------------------------------------------------------------------------*/
+picker_write_o(p)
+register struct pkr_item *p;
+{
+  struct pkr_item work;
+
+  memcpy(&work, p, sizeof(struct pkr_item));
+
+  work.first_name[15]    = '\0';
+  work.last_name[15]     = '\0';
+  work.middle_initial[1] = '\0';
+
+  EXEC SQL INSERT INTO picker 
+  ( picker_id      ,last_name ,first_name  ,middle_initial,
+    underway_orders,start_time,current_time,cur_order_count,
+    cur_lines      ,cur_units ,cur_time    ,cum_order_count,
+    cum_lines      ,cum_units ,cum_time)
+  VALUES (
+:work.picker_id      ,:work.last_name ,:work.first_name  ,:work.middle_initial,
+:work.underway_orders,:work.start_time,:work.current_time,:work.cur_order_count,
+:work.cur_lines      ,:work.cur_units ,:work.cur_time    ,:work.cum_order_count,
+:work.cum_lines      ,:work.cum_units ,:work.cum_time);
+
+  if (sqlca.sqlcode) icrash("picker_write");
+  return 0;
+}
+/*-------------------------------------------------------------------------*
+ *  Update Database
+ *-------------------------------------------------------------------------*/
+picker_update_o(p)
+register struct pkr_item *p;
+{
+  struct pkr_item work;
+  int l_picker_id;
+  if (picker_last > 0)
+  {
+    memcpy(&work, p, sizeof(struct pkr_item));
+    l_picker_id = p->picker_id;
+    picker_last = 0;
+    work.first_name[15]    = '\0';
+    work.last_name[15]     = '\0';
+    work.middle_initial[1] = '\0';
+
+    EXEC SQL UPDATE picker
+    SET   picker_id      = :work.picker_id,
+          last_name      = :work.last_name,
+          first_name     = :work.first_name,
+          middle_initial = :work.middle_initial,
+          underway_orders= :work.underway_orders,
+          start_time     = :work.start_time,
+          current_time   = :work.current_time,
+          cur_order_count= :work.cur_order_count,
+          cur_lines      = :work.cur_lines,
+          cur_units      = :work.cur_units,
+          cur_time       = :work.cur_time,
+          cum_order_count= :work.cum_order_count,
+          cum_lines      = :work.cum_lines,
+          cum_units      = :work.cum_units,
+          cum_time       = :work.cum_time
+
+    WHERE picker_id      = :l_picker_id;
+
+    return 0;
+  }
+  krash("picker_update", "no active record", 1);
+}
+/*-------------------------------------------------------------------------*
+ *  Delete Database Row
+ *-------------------------------------------------------------------------*/
+picker_delete_o(p)
+register struct pkr_item *p;
+{
+  int l_picker_id;
+  if (picker_last > 0)
+  {
+    picker_last = 0;
+
+    EXEC SQL DELETE FROM picker
+    WHERE picker_id      = :l_picker_id;
+    
+    return 0;
+  }
+  krash("picker_delete", "no acitve record", 1);
+
+}
+
+
+/*-------------------------------------------------------------------------*
+ *  Query Database Row For Specific Picker ID
+ *-------------------------------------------------------------------------*/
+picker_query(p, pckr)
+register struct pkr_item *p;
+register long pckr;
+{
+struct pkr_item work;
+long pickerid = 0;
+
+ pickerid = pckr;
+
+EXEC SQL select * into :work
+  from picker
+  where picker_id = :pickerid;
+
+  if (sqlca.sqlcode == 0)
+     {
+        memcpy(p, &work, sizeof(struct pkr_item));
+        return 0;
+     }
+  else if (sqlca.sqlcode == SQLNOTFOUND)
+     {
+        return 1;
+     }
+  icrash("picker_query");
+  return 0;
+}
+
+/* end of picker.ec  */
