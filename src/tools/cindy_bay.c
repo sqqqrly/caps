@@ -62,7 +62,7 @@ char **argv;
     {
       for (n = 0; n < bay[j].bins; n++)
       {
-        mod++;
+         mod++;
          /* mod|sku|qty|alloc|restock|rqty|lcap|stkloc|disp|idx|pi|  */
          printf("%d||%d|0|%d|%d|%d|%3.3s%1d%02d||0|n|0|0|0|0|0|0|n|n|\n",
            mod, qty, restock, rqty, lcap, bay[j].id, m, n + bay[j].first);
