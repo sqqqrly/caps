@@ -1,0 +1,2 @@
+select * from picks where pi_reference=55 and pi_lot is  null
+/

@@ -1,0 +1,10 @@
+#
+#  Create All Oracle  Tables
+#
+echo "Making All Tables "`date` >LIST
+echo "Making All Tables "`date` >ERR
+
+# Ravi - do not need the create
+#sqlplus -s / @.create.sql
+alltables
+

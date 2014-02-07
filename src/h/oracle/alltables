@@ -1,0 +1,8 @@
+# Script Is used for create all Table
+cd $HOME/src/h/oracle
+for i in `cat sqllist`
+do
+  echo "Create $i"
+  sqlplus -s / @$i
+done
+echo "All tables created Sucessfully"

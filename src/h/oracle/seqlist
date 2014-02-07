@@ -1,0 +1,8 @@
+box_list_seq.sql
+log_seq.sql
+packing_list_seq.sql
+queue_seq.sql
+reference_seq.sql
+ship_label_seq.sql
+short_seq.sql
+tote_label_seq.sql
