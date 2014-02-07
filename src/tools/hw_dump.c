@@ -17,16 +17,18 @@
  *-------------+-----------------------------------------------------------*
  *  04/01/03   |  aha  Created program.
  *-------------------------------------------------------------------------*/
-static char hw_dump_c[] = "%Z% %M% %I% (%G% - %U%)";
-#include "caps_copyright.h"
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "caps_copyright.h"
 #include "ss.h"
 #include "co.h"
 
 #define KERNELNAME  "bin/kernel"
 #define DUMPFILE    "sql/hw_dump.dat"
 
+static char hw_dump_c[] = "%Z% %M% %I% (%G% - %U%)";
 FILE *hwf;
 
 main()
