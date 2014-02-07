@@ -22,7 +22,7 @@ LIBS=$(CLIB) $(BLIB) $(SLIB) $(HOME)/lib/libocaps.a
 #--------------------------------------------------------------------------#
 #  compile parameters
 #
-INCS=-I/usr/include -iquote$(INC) 
+INCS=-I/usr/include -iquote$(INC) -I$(SRN)
 #INCS=-I/usr/include -I$(INC) -I$(SRN)
 FLAGS=-c $(CDEFINES)-g  #-Xlinker -zmuldefs
 #FLAGS=-c $(CDEFINES) -w 0
