@@ -1,0 +1,465 @@
+#--------------------------------------------------------------------------#
+#  progs sources
+#
+PROGS=\
+   ac_test.c\
+   alc_install.c\
+   alc_util.c\
+   alloc_init.c\
+   batch_no_init.c\
+   charset.c\
+   check_caps.c\
+   check_logins.c\
+   cindy_bay.c\
+   clear_comm.c\
+   clear_keys.c\
+   clear_segs.c\
+   clear_trans_count.c\
+   co_init.c\
+   code_print.c\
+   commtest.c\
+   configure_cvrt.c\
+   create_db.c\
+   create_orders.c\
+   cvrt_sp.c\
+   cvrt_trans.c\
+   delfile.c\
+   dup_sku.c\
+   engine_test.c\
+   erase.c\
+   filesize_caps.c\
+   find_box_ops.c\
+   find_quote.c\
+   fl_dump.c\
+   fl_init.c\
+   get_config_filename.c\
+   get_sub.c\
+   hw_dump.c\
+   imt_init.c\
+   keys.c\
+   label.c\
+   lookup.c\
+   make_ac_firmware.c\
+   monitor.c\
+   of_diags.c\
+   of_init.c\
+   of_init_bard.c\
+   op_init.c\
+   pattest.c\
+   pm_delete.c\
+   pr_init.c\
+   primes.c\
+   print_queue.c\
+   record_sizes.c\
+   resend_trans.c\
+   reset_purge_window.c\
+   restock_no_init.c\
+   save_segs.c\
+   sedit.c\
+   set_ff_simulate.c\
+   set_remaining.c\
+   showit.c\
+   ss_dump.c\
+   ss_init.c\
+   stop_caps.c\
+   stop_caps1.c\
+   stuff.c\
+   sumtime.c\
+   talker.c\
+   test_catcher.c\
+   time_tested.c\
+   to_caps_errlog.c\
+   trans_d.c\
+   uncat.c\
+   unpicked.c\
+   uppercase.c
+
+#--------------------------------------------------------------------------#
+#  progs targets
+#
+all::	progs
+progs:\
+   $(BIN)/ac_test\
+   $(BIN)/alc_install\
+   $(BIN)/alc_util\
+   $(BIN)/alloc_init\
+   $(BIN)/batch_no_init\
+   $(BIN)/charset\
+   $(BIN)/check_caps\
+   $(BIN)/check_logins\
+   $(BIN)/cindy_bay\
+   $(BIN)/clear_comm\
+   $(BIN)/clear_keys\
+   $(BIN)/clear_segs\
+   $(BIN)/clear_trans_count\
+   $(BIN)/co_init\
+   $(BIN)/code_print\
+   $(BIN)/commtest\
+   $(BIN)/configure_cvrt\
+   $(BIN)/create_db\
+   $(BIN)/create_orders\
+   $(BIN)/cvrt_sp\
+   $(BIN)/cvrt_trans\
+   $(BIN)/delfile\
+   $(BIN)/dup_sku\
+   $(BIN)/engine_test\
+   $(BIN)/erase\
+   $(BIN)/filesize_caps\
+   $(BIN)/find_box_ops\
+   $(BIN)/find_quote\
+   $(BIN)/fl_dump\
+   $(BIN)/fl_init\
+   $(BIN)/get_config_filename\
+   $(BIN)/get_sub\
+   $(BIN)/hw_dump\
+   $(BIN)/imt_init\
+   $(BIN)/keys\
+   $(BIN)/label\
+   $(BIN)/lookup\
+   $(BIN)/make_ac_firmware\
+   $(BIN)/monitor\
+   $(BIN)/of_diags\
+   $(BIN)/of_init\
+   $(BIN)/of_init_bard\
+   $(BIN)/op_init\
+   $(BIN)/pattest\
+   $(BIN)/pm_delete\
+   $(BIN)/pr_init\
+   $(BIN)/primes\
+   $(BIN)/print_queue\
+   $(BIN)/record_sizes\
+   $(BIN)/resend_trans\
+   $(BIN)/reset_purge_window\
+   $(BIN)/restock_no_init\
+   $(BIN)/save_segs\
+   $(BIN)/sedit\
+   $(BIN)/set_ff_simulate\
+   $(BIN)/set_remaining\
+   $(BIN)/showit\
+   $(BIN)/ss_dump\
+   $(BIN)/ss_init\
+   $(BIN)/stop_caps\
+   $(BIN)/stop_caps1\
+   $(BIN)/stuff\
+   $(BIN)/sumtime\
+   $(BIN)/talker\
+   $(BIN)/test_catcher\
+   $(BIN)/time_tested\
+   $(BIN)/to_caps_errlog\
+   $(BIN)/trans_d\
+   $(BIN)/uncat\
+   $(BIN)/unpicked\
+   $(BIN)/uppercase
+	@echo progs is up to date
+
+#--------------------------------------------------------------------------#
+#  progs dependencies
+#
+$(OBJ)/ac_test.o:                 ac_test.c\
+   $(INC)/microtimer.h            ; @$(COMPILE)
+$(BIN)/ac_test:   $(OBJ)/ac_test.o   $(LIBS); @$(LINK)
+$(OBJ)/alc_install.o:             alc_install.c; @$(COMPILE)
+$(BIN)/alc_install:   $(OBJ)/alc_install.o   $(LIBS); @$(LINK)
+$(OBJ)/alc_util.o:                alc_util.c\
+   $(INC)/td.h                    \
+   $(INC)/file_names.h            \
+   $(SRN)/alc_util.t              ; @$(COMPILE)
+$(BIN)/alc_util:   $(OBJ)/alc_util.o   $(LIBS); @$(LINK)
+$(OBJ)/alloc_init.o:              alloc_init.c\
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/alloc_init:   $(OBJ)/alloc_init.o   $(LIBS); @$(LINK)
+$(OBJ)/batch_no_init.o:           batch_no_init.c\
+   $(INC)/file_names.h            ; @$(COMPILE)
+$(BIN)/batch_no_init:   $(OBJ)/batch_no_init.o   $(LIBS); @$(LINK)
+$(OBJ)/charset.o:                 charset.c; @$(COMPILE)
+$(BIN)/charset:   $(OBJ)/charset.o   $(LIBS); @$(LINK)
+$(OBJ)/check_caps.o:              check_caps.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/check_caps:   $(OBJ)/check_caps.o   $(LIBS); @$(LINK)
+$(OBJ)/check_logins.o:            check_logins.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    ; @$(COMPILE)
+$(BIN)/check_logins:   $(OBJ)/check_logins.o   $(LIBS); @$(LINK)
+$(OBJ)/cindy_bay.o:               cindy_bay.c; @$(COMPILE)
+$(BIN)/cindy_bay:   $(OBJ)/cindy_bay.o   $(LIBS); @$(LINK)
+$(OBJ)/clear_comm.o:              clear_comm.c\
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/clear_comm:   $(OBJ)/clear_comm.o   $(LIBS); @$(LINK)
+$(OBJ)/clear_keys.o:              clear_keys.c; @$(COMPILE)
+$(BIN)/clear_keys:   $(OBJ)/clear_keys.o   $(LIBS); @$(LINK)
+$(OBJ)/clear_segs.o:              clear_segs.c; @$(COMPILE)
+$(BIN)/clear_segs:   $(OBJ)/clear_segs.o   $(LIBS); @$(LINK)
+$(OBJ)/clear_trans_count.o:       clear_trans_count.c\
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/clear_trans_count:   $(OBJ)/clear_trans_count.o   $(LIBS); @$(LINK)
+$(OBJ)/co_init.o:                 co_init.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    ; @$(COMPILE)
+$(BIN)/co_init:   $(OBJ)/co_init.o   $(LIBS); @$(LINK)
+$(OBJ)/code_print.o:              code_print.c\
+   $(INC)/text_spec.h             ; @$(COMPILE)
+$(BIN)/code_print:   $(OBJ)/code_print.o   $(LIBS); @$(LINK)
+$(OBJ)/commtest.o:                commtest.c; @$(COMPILE)
+$(BIN)/commtest:   $(OBJ)/commtest.o   $(LIBS); @$(LINK)
+$(OBJ)/configure_cvrt.o:          configure_cvrt.c\
+   $(INC)/global_types.h          ; @$(COMPILE)
+$(BIN)/configure_cvrt:   $(OBJ)/configure_cvrt.o   $(LIBS); @$(LINK)
+$(OBJ)/create_db.o:               create_db.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/bard/prodfile.h         ; @$(COMPILE)
+$(BIN)/create_db:   $(OBJ)/create_db.o   $(LIBS); @$(LINK)
+$(OBJ)/create_orders.o:           create_orders.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    ; @$(COMPILE)
+$(BIN)/create_orders:   $(OBJ)/create_orders.o   $(LIBS); @$(LINK)
+$(OBJ)/cvrt_sp.o:                 cvrt_sp.c; @$(COMPILE)
+$(BIN)/cvrt_sp:   $(OBJ)/cvrt_sp.o   $(LIBS); @$(LINK)
+$(OBJ)/cvrt_trans.o:              cvrt_trans.c; @$(COMPILE)
+$(BIN)/cvrt_trans:   $(OBJ)/cvrt_trans.o   $(LIBS); @$(LINK)
+$(OBJ)/delfile.o:                 delfile.c; @$(COMPILE)
+$(BIN)/delfile:   $(OBJ)/delfile.o   $(LIBS); @$(LINK)
+$(OBJ)/dup_sku.o:                 dup_sku.c\
+   $(INC)/Bard.h                  \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/co.h                    \
+   $(INC)/st.h                    \
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/dup_sku:   $(OBJ)/dup_sku.o   $(LIBS); @$(LINK)
+$(OBJ)/engine_test.o:             engine_test.c\
+   $(INC)/caps_messages.h         \
+   $(INC)/message_types.h         \
+   $(INC)/engine_messages.h       \
+   $(INC)/engine_mess_types.h     ; @$(COMPILE)
+$(BIN)/engine_test:   $(OBJ)/engine_test.o   $(LIBS); @$(LINK)
+$(OBJ)/erase.o:                   erase.c; @$(COMPILE)
+$(BIN)/erase:   $(OBJ)/erase.o   $(LIBS); @$(LINK)
+$(OBJ)/filesize_caps.o:           filesize_caps.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/pr.h                    ; @$(COMPILE)
+$(BIN)/filesize_caps:   $(OBJ)/filesize_caps.o   $(LIBS); @$(LINK)
+$(OBJ)/find_box_ops.o:            find_box_ops.c\
+   $(INC)/co.h                    ; @$(COMPILE)
+$(BIN)/find_box_ops:   $(OBJ)/find_box_ops.o   $(LIBS); @$(LINK)
+$(OBJ)/find_quote.o:              find_quote.c; @$(COMPILE)
+$(BIN)/find_quote:   $(OBJ)/find_quote.o   $(LIBS); @$(LINK)
+$(OBJ)/fl_dump.o:                 fl_dump.c\
+   $(INC)/file_names.h            \
+   $(INC)/features.h              ; @$(COMPILE)
+$(BIN)/fl_dump:   $(OBJ)/fl_dump.o   $(LIBS); @$(LINK)
+$(OBJ)/fl_init.o:                 fl_init.c\
+   $(INC)/file_names.h            \
+   $(INC)/features.h              ; @$(COMPILE)
+$(BIN)/fl_init:   $(OBJ)/fl_init.o   $(LIBS); @$(LINK)
+$(OBJ)/get_config_filename.o:     get_config_filename.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    ; @$(COMPILE)
+$(BIN)/get_config_filename:   $(OBJ)/get_config_filename.o   $(LIBS); @$(LINK)
+$(OBJ)/get_sub.o:                 get_sub.c; @$(COMPILE)
+$(BIN)/get_sub:   $(OBJ)/get_sub.o   $(LIBS); @$(LINK)
+$(OBJ)/hw_dump.o:                 hw_dump.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    ; @$(COMPILE)
+$(BIN)/hw_dump:   $(OBJ)/hw_dump.o   $(LIBS); @$(LINK)
+$(OBJ)/imt_init.o:                imt_init.c\
+   $(INC)/imt.h                   ; @$(COMPILE)
+$(BIN)/imt_init:   $(OBJ)/imt_init.o   $(LIBS); @$(LINK)
+$(OBJ)/keys.o:                    keys.c; @$(COMPILE)
+$(BIN)/keys:   $(OBJ)/keys.o   $(LIBS); @$(LINK)
+$(OBJ)/label.o:                   label.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/bard/short_notice.h     \
+   $(INC)/bard/restock_notice.h   ; @$(COMPILE)
+$(BIN)/label:   $(OBJ)/label.o   $(LIBS); @$(LINK)
+$(OBJ)/lookup.o:                  lookup.c; @$(COMPILE)
+$(BIN)/lookup:   $(OBJ)/lookup.o   $(LIBS); @$(LINK)
+$(OBJ)/make_ac_firmware.o:        make_ac_firmware.c\
+   $(INC)/file_names.h            ; @$(COMPILE)
+$(BIN)/make_ac_firmware:   $(OBJ)/make_ac_firmware.o   $(LIBS); @$(LINK)
+$(OBJ)/monitor.o:                 monitor.c\
+   $(INC)/Bard.h                  \
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/pr.h                    \
+   $(INC)/st.h                    ; @$(COMPILE)
+$(BIN)/monitor:   $(OBJ)/monitor.o   $(LIBS); @$(LINK)
+$(OBJ)/of_diags.o:                of_diags.c\
+   $(INC)/Bard.h                  \
+   $(INC)/global_types.h          \
+   $(INC)/of.h                    ; @$(COMPILE)
+$(BIN)/of_diags:   $(OBJ)/of_diags.o   $(LIBS); @$(LINK)
+$(OBJ)/of_init.o:                 of_init.c\
+   $(INC)/file_names.h            \
+   $(INC)/global_types.h          \
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    ; @$(COMPILE)
+$(BIN)/of_init:   $(OBJ)/of_init.o   $(LIBS); @$(LINK)
+$(OBJ)/of_init_bard.o:            of_init_bard.c\
+   $(INC)/Bheader.h               \
+   $(INC)/file_names.h            \
+   $(INC)/global_types.h          \
+   $(INC)/ss.h                    \
+   $(INC)/of.h                    ; @$(COMPILE)
+$(BIN)/of_init_bard:   $(OBJ)/of_init_bard.o   $(LIBS); @$(LINK)
+$(OBJ)/op_init.o:                 op_init.c\
+   $(INC)/file_names.h            \
+   $(INC)/bard/operator.h         \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/op_init:   $(OBJ)/op_init.o   $(LIBS); @$(LINK)
+$(OBJ)/pattest.o:                 pattest.c; @$(COMPILE)
+$(BIN)/pattest:   $(OBJ)/pattest.o   $(LIBS); @$(LINK)
+$(OBJ)/pm_delete.o:               pm_delete.c\
+   $(INC)/Bard.h                  \
+   $(INC)/bard/pmfile.h           ; @$(COMPILE)
+$(BIN)/pm_delete:   $(OBJ)/pm_delete.o   $(LIBS); @$(LINK)
+$(OBJ)/pr_init.o:                 pr_init.c\
+   $(INC)/file_names.h            \
+   $(INC)/pr.h                    \
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/pr_init:   $(OBJ)/pr_init.o   $(LIBS); @$(LINK)
+$(OBJ)/primes.o:                  primes.c; @$(COMPILE)
+$(BIN)/primes:   $(OBJ)/primes.o   $(LIBS); @$(LINK)
+$(OBJ)/print_queue.o:             print_queue.c\
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/Bard.h                  ; @$(COMPILE)
+$(BIN)/print_queue:   $(OBJ)/print_queue.o   $(LIBS); @$(LINK)
+$(OBJ)/record_sizes.o:            record_sizes.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/bard/box_packing_list.h \
+   $(INC)/boxes.h                 \
+   $(INC)/bard/location.h         \
+   $(INC)/bard/maint_log.h        \
+   $(INC)/bard/lot.h              \
+   $(INC)/bard/operator.h         \
+   $(INC)/bard/orders.h           \
+   $(INC)/bard/packing_list.h     \
+   $(INC)/bard/pending.h          \
+   $(INC)/bard/picker.h           \
+   $(INC)/bard/picker_order.h     \
+   $(INC)/bard/picks.h            \
+   $(INC)/bard/pmfile.h           \
+   $(INC)/bard/prodfile.h         \
+   $(INC)/bard/queue.h            \
+   $(INC)/bard/remarks.h          \
+   $(INC)/bard/restock_notice.h   \
+   $(INC)/bard/ship_label.h       \
+   $(INC)/bard/short_notice.h     \
+   $(INC)/bard/tote_label.h       \
+   $(INC)/bard/transaction.h      ; @$(COMPILE)
+$(BIN)/record_sizes:   $(OBJ)/record_sizes.o   $(LIBS); @$(LINK)
+$(OBJ)/resend_trans.o:            resend_trans.c\
+   $(INC)/ss.h                    \
+   $(INC)/xt.h                    \
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         ; @$(COMPILE)
+$(BIN)/resend_trans:   $(OBJ)/resend_trans.o   $(LIBS); @$(LINK)
+$(OBJ)/reset_purge_window.o:      reset_purge_window.c\
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/reset_purge_window:   $(OBJ)/reset_purge_window.o   $(LIBS); @$(LINK)
+$(OBJ)/restock_no_init.o:         restock_no_init.c\
+   $(INC)/file_names.h            ; @$(COMPILE)
+$(BIN)/restock_no_init:   $(OBJ)/restock_no_init.o   $(LIBS); @$(LINK)
+$(OBJ)/save_segs.o:               save_segs.c\
+   $(INC)/ss.h                    \
+   $(INC)/co.h                    \
+   $(INC)/of.h                    \
+   $(INC)/pr.h                    ; @$(COMPILE)
+$(BIN)/save_segs:   $(OBJ)/save_segs.o   $(LIBS); @$(LINK)
+$(OBJ)/sedit.o:                   sedit.c\
+   $(INC)/td.h                    ; @$(COMPILE)
+$(BIN)/sedit:   $(OBJ)/sedit.o   $(LIBS); @$(LINK)
+$(OBJ)/set_ff_simulate.o:         set_ff_simulate.c\
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/set_ff_simulate:   $(OBJ)/set_ff_simulate.o   $(LIBS); @$(LINK)
+$(OBJ)/set_remaining.o:           set_remaining.c\
+   $(INC)/ss.h                    ; @$(COMPILE)
+$(BIN)/set_remaining:   $(OBJ)/set_remaining.o   $(LIBS); @$(LINK)
+$(OBJ)/showit.o:                  showit.c; @$(COMPILE)
+$(BIN)/showit:   $(OBJ)/showit.o   $(LIBS); @$(LINK)
+$(OBJ)/ss_dump.o:                 ss_dump.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/ss_init.h               ; @$(COMPILE)
+$(BIN)/ss_dump:   $(OBJ)/ss_dump.o   $(LIBS); @$(LINK)
+$(OBJ)/ss_init.o:                 ss_init.c\
+   $(INC)/file_names.h            \
+   $(INC)/ss.h                    \
+   $(INC)/ss_init.h               ; @$(COMPILE)
+$(BIN)/ss_init:   $(OBJ)/ss_init.o   $(LIBS); @$(LINK)
+$(OBJ)/stop_caps.o:               stop_caps.c\
+   $(INC)/caps_copyright.h        \
+   $(INC)/ss.h                    \
+   $(INC)/message.h               \
+   $(INC)/kernel.h                \
+   $(INC)/kernel_types.h          \
+   $(INC)/message_types.h         ; @$(COMPILE)
+$(BIN)/stop_caps:   $(OBJ)/stop_caps.o   $(LIBS); @$(LINK)
+$(OBJ)/stop_caps1.o:              stop_caps1.c\
+   $(INC)/ss.h                    \
+   $(INC)/message.h               \
+   $(INC)/kernel.h                \
+   $(INC)/kernel_types.h          \
+   $(INC)/message_types.h         ; @$(COMPILE)
+$(BIN)/stop_caps1:   $(OBJ)/stop_caps1.o   $(LIBS); @$(LINK)
+$(OBJ)/stuff.o:                   stuff.c; @$(COMPILE)
+$(BIN)/stuff:   $(OBJ)/stuff.o   $(LIBS); @$(LINK)
+$(OBJ)/sumtime.o:                 sumtime.c; @$(COMPILE)
+$(BIN)/sumtime:   $(OBJ)/sumtime.o   $(LIBS); @$(LINK)
+$(OBJ)/talker.o:                  talker.c; @$(COMPILE)
+$(BIN)/talker:   $(OBJ)/talker.o   $(LIBS); @$(LINK)
+$(OBJ)/test_catcher.o:            test_catcher.c; @$(COMPILE)
+$(BIN)/test_catcher:   $(OBJ)/test_catcher.o   $(LIBS); @$(LINK)
+$(OBJ)/time_tested.o:             time_tested.c; @$(COMPILE)
+$(BIN)/time_tested:   $(OBJ)/time_tested.o   $(LIBS); @$(LINK)
+$(OBJ)/to_caps_errlog.o:          to_caps_errlog.c; @$(COMPILE)
+$(BIN)/to_caps_errlog:   $(OBJ)/to_caps_errlog.o   $(LIBS); @$(LINK)
+$(OBJ)/trans_d.o:                 trans_d.c\
+   $(INC)/message_types.h         \
+   $(INC)/caps_messages.h         \
+   $(INC)/xt.h                    ; @$(COMPILE)
+$(BIN)/trans_d:   $(OBJ)/trans_d.o   $(LIBS); @$(LINK)
+$(OBJ)/uncat.o:                   uncat.c; @$(COMPILE)
+$(BIN)/uncat:   $(OBJ)/uncat.o   $(LIBS); @$(LINK)
+$(OBJ)/unpicked.o:                unpicked.c\
+   $(INC)/of.h                    \
+   $(INC)/Bard.h                  \
+   $(INC)/bard/picks.h            ; @$(COMPILE)
+$(BIN)/unpicked:   $(OBJ)/unpicked.o   $(LIBS); @$(LINK)
+$(OBJ)/uppercase.o:               uppercase.c; @$(COMPILE)
+$(BIN)/uppercase:   $(OBJ)/uppercase.o   $(LIBS); @$(LINK)
+
+#--------------------------------------------------------------------------#
+#  clean progs
+#
+cleanall:: cleanprogs
+cleanprogs:
+	@echo "Removing progs Objects"
+	@-cd $(OBJ); rm $(PROGS:.c=.o)
+	@echo "Removing progs Binaries"
+	@-cd $(BIN); rm $(PROGS:.c=)
+
+#--------------------------------------------------------------------------#
+#  print progs
+#
+printall:: printprogs
+printprogs: lastprint
+lastprint:: $(PROGS); @$(PRINT)
+
