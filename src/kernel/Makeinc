@@ -1,0 +1,220 @@
+#--------------------------------------------------------------------------#
+#  lib sources
+#
+LIB=\
+   Kernel_Ack.c\
+   Kernel_Apnd.c\
+   Kernel_Close.c\
+   Kernel_Err.c\
+   Kernel_File.c\
+   Kernel_Find.c\
+   Kernel_Flush.c\
+   Kernel_Get.c\
+   Kernel_Log.c\
+   Kernel_Msg.c\
+   Kernel_Name.c\
+   Kernel_Open.c\
+   Kernel_Pack.c\
+   Kernel_Purge.c\
+   Kernel_Put.c\
+   Kernel_Selct.c\
+   Kernel_Shut.c\
+   Kernel_Sig.c\
+   Kernel_Stop.c\
+   Kernel_WDog.c\
+   Kernel_Who.c\
+   kernel_who.c
+
+#--------------------------------------------------------------------------#
+#  lib targets
+#
+all::	lib
+lib:\
+   $(LLIB)(Kernel_Ack.o)\
+   $(LLIB)(Kernel_Apnd.o)\
+   $(LLIB)(Kernel_Close.o)\
+   $(LLIB)(Kernel_Err.o)\
+   $(LLIB)(Kernel_File.o)\
+   $(LLIB)(Kernel_Find.o)\
+   $(LLIB)(Kernel_Flush.o)\
+   $(LLIB)(Kernel_Get.o)\
+   $(LLIB)(Kernel_Log.o)\
+   $(LLIB)(Kernel_Msg.o)\
+   $(LLIB)(Kernel_Name.o)\
+   $(LLIB)(Kernel_Open.o)\
+   $(LLIB)(Kernel_Pack.o)\
+   $(LLIB)(Kernel_Purge.o)\
+   $(LLIB)(Kernel_Put.o)\
+   $(LLIB)(Kernel_Selct.o)\
+   $(LLIB)(Kernel_Shut.o)\
+   $(LLIB)(Kernel_Sig.o)\
+   $(LLIB)(Kernel_Stop.o)\
+   $(LLIB)(Kernel_WDog.o)\
+   $(LLIB)(Kernel_Who.o)\
+   $(LLIB)(kernel_who.o)
+	@echo lib is up to date
+
+#--------------------------------------------------------------------------#
+#  lib dependencies
+#
+$(LLIB)(Kernel_Ack.o):	              Kernel_Ack.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Apnd.o):	             Kernel_Apnd.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Close.o):	            Kernel_Close.c\
+   $(INC)/message.h               
+$(LLIB)(Kernel_Err.o):	              Kernel_Err.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_File.o):	             Kernel_File.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Find.o):	             Kernel_Find.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Flush.o):	            Kernel_Flush.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Get.o):	              Kernel_Get.c\
+   $(INC)/message.h               
+$(LLIB)(Kernel_Log.o):	              Kernel_Log.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Msg.o):	              Kernel_Msg.c\
+   $(INC)/message.h               \
+   ./kernel.h              \
+   ./kernel_types.h        
+$(LLIB)(Kernel_Name.o):	             Kernel_Name.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Open.o):	             Kernel_Open.c\
+   $(INC)/message.h               \
+   ./kernel_types.h        
+$(LLIB)(Kernel_Pack.o):	             Kernel_Pack.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Purge.o):	            Kernel_Purge.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Put.o):	              Kernel_Put.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Selct.o):	            Kernel_Selct.c\
+   $(INC)/message.h               \
+   $(INC)/message_types.h         \
+   ./kernel.h              
+$(LLIB)(Kernel_Shut.o):	             Kernel_Shut.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Sig.o):	              Kernel_Sig.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Stop.o):	             Kernel_Stop.c\
+   $(INC)/message.h               \
+   ./kernel.h              \
+   ./kernel_types.h        \
+   $(INC)/message_types.h         
+$(LLIB)(Kernel_WDog.o):	             Kernel_WDog.c\
+   $(INC)/message.h               \
+   ./kernel.h              
+$(LLIB)(Kernel_Who.o):	              Kernel_Who.c\
+   $(INC)/message.h               \
+   ./kernel.h              \
+   ./kernel_types.h        
+$(LLIB)(kernel_who.o):	              kernel_who.c\
+   $(INC)/message.h               \
+   ./kernel.h              \
+   ./kernel_types.h        
+
+#--------------------------------------------------------------------------#
+#  clean lib
+#
+cleanall:: cleanlib
+cleanlib:
+	@echo "Removing lib Library Units $(LIB:.c=.o)"
+	@-ar -d $(LLIB) $(LIB:.c=.o)
+
+#--------------------------------------------------------------------------#
+#  print lib
+#
+printall:: printlib
+printlib: lastprint
+lastprint:: $(LIB); @$(PRINT)
+
+#--------------------------------------------------------------------------#
+#  progs sources
+#
+PROGS=\
+   kernel.c\
+   kernel2.c\
+   kernel_clear.c\
+   kernel_print.c\
+   kernel_test.c\
+   kernel_who.c
+
+#--------------------------------------------------------------------------#
+#  progs targets
+#
+all::	progs
+progs:\
+   $(BIN)/kernel\
+   $(BIN)/kernel2\
+   $(BIN)/kernel_clear\
+   $(BIN)/kernel_print\
+   $(BIN)/kernel_test\
+   $(BIN)/kernel_who
+	@echo progs is up to date
+
+#--------------------------------------------------------------------------#
+#  progs dependencies
+#
+$(OBJ)/kernel.o:                  kernel.c\
+   $(INC)/message.h               \
+   ./kernel.h              \
+   ./kernel_types.h        \
+   ./kernel_data.h         ; @$(COMPILE)
+$(BIN)/kernel:   $(OBJ)/kernel.o   $(LIBS); @$(LINK)
+$(OBJ)/kernel2.o:                 kernel2.c\
+   $(INC)/message.h               \
+   ./kernel.h              \
+   ./kernel_types.h        \
+   ./kernel_data.h         ; @$(COMPILE)
+$(BIN)/kernel2:   $(OBJ)/kernel2.o   $(LIBS); @$(LINK)
+$(OBJ)/kernel_clear.o:            kernel_clear.c\
+   $(INC)/message.h               ; @$(COMPILE)
+$(BIN)/kernel_clear:   $(OBJ)/kernel_clear.o   $(LIBS); @$(LINK)
+$(OBJ)/kernel_print.o:            kernel_print.c\
+   $(INC)/message.h               \
+   ./kernel.h              \
+   ./kernel_data.h         \
+   ./kernel_types.h        \
+   $(INC)/message_types.h         ; @$(COMPILE)
+$(BIN)/kernel_print:   $(OBJ)/kernel_print.o   $(LIBS); @$(LINK)
+$(OBJ)/kernel_test.o:             kernel_test.c\
+   $(INC)/message.h               ; @$(COMPILE)
+$(BIN)/kernel_test:   $(OBJ)/kernel_test.o   $(LIBS); @$(LINK)
+$(OBJ)/kernel_who.o:              kernel_who.c\
+   $(INC)/message.h               \
+   ./kernel.h              \
+   ./kernel_types.h        ; @$(COMPILE)
+$(BIN)/kernel_who:   $(OBJ)/kernel_who.o   $(LIBS); @$(LINK)
+
+#--------------------------------------------------------------------------#
+#  clean progs
+#
+cleanall:: cleanprogs
+cleanprogs:
+	@echo "Removing progs Objects"
+	@-cd $(OBJ); rm $(PROGS:.c=.o)
+	@echo "Removing progs Binaries"
+	@-cd $(BIN); rm $(PROGS:.c=)
+
+#--------------------------------------------------------------------------#
+#  print progs
+#
+printall:: printprogs
+printprogs: lastprint
+lastprint:: $(PROGS); @$(PRINT)
+
