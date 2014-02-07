@@ -18,10 +18,10 @@
 static char find_quote_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define MAX  10000
-
-char *memchr();
 
 FILE *id, *od, *hd;
 char id_name[64];
