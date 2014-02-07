@@ -20,6 +20,7 @@ static char commtest_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
 #include <termio.h>
+#include <stdlib.h>
 
 long master = 0;
 long count;
@@ -64,7 +65,7 @@ char **argv;
  *  Master Task
  *-------------------------------------------------------------------------*/
 master_task(name)
-register long *name;
+register char *name;
 {
   register long k;
   char buf[80], *ret;
@@ -115,7 +116,7 @@ register long *name;
  *  Slave Task
  *-------------------------------------------------------------------------*/
 slave_task(name)
-register long *name;
+register char *name;
 {
   register long k;
   char buf[80], c, *ret;
