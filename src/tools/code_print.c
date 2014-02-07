@@ -21,6 +21,9 @@ static char code_print_c[] = "%Z% %M% %I% (%G% - %U%)";
  *  print paper print code
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "text_spec.h"
 
 #define MAX 200
@@ -96,6 +99,7 @@ char **argv;
   printf("End of List\n");
   fclose(fd);
 }
+
 load_spec(name)
 char *name;
 {
@@ -118,15 +122,17 @@ char *name;
   }
   fclose(sd);
 }
+
 load_others()
 {
-  tab[max].text_no = 26; strcpy(&tab[max], "print"); max++;
-  tab[max].text_no = 27; strcpy(&tab[max], "copies"); max++;
-  tab[max].text_no = 28; strcpy(&tab[max], "if_print"); max++;
-  tab[max].text_no = 29; strcpy(&tab[max], "if_flag"); max++;
-  tab[max].text_no = 30; strcpy(&tab[max], "repeats"); max++;
-  tab[max].text_no = 31; strcpy(&tab[max], "end"); max++;
+  tab[max].text_no = 26; strcpy(&tab[max].text_name[0], "print");    max++;
+  tab[max].text_no = 27; strcpy(&tab[max].text_name[0], "copies");   max++;
+  tab[max].text_no = 28; strcpy(&tab[max].text_name[0], "if_print"); max++;
+  tab[max].text_no = 29; strcpy(&tab[max].text_name[0], "if_flag");  max++;
+  tab[max].text_no = 30; strcpy(&tab[max].text_name[0], "repeats");  max++;
+  tab[max].text_no = 31; strcpy(&tab[max].text_name[0], "end");      max++;
 }
+
 print_literal(name, len, offset)
 char *name;
 long len, offset;
@@ -150,3 +156,4 @@ long len, offset;
 }
         
 /* end of code_print.c */
+
