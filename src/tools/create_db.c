@@ -21,6 +21,9 @@
 static char create_db_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ss.h"
 #include "co.h"
 #include "Bard.h"
