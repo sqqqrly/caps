@@ -22,7 +22,6 @@ LIB=\
    Kernel_Sig.c\
    Kernel_Stop.c\
    Kernel_WDog.c\
-   Kernel_Who.c\
    kernel_who.c
 
 #--------------------------------------------------------------------------#
@@ -50,22 +49,21 @@ lib:\
    $(LLIB)(Kernel_Sig.o)\
    $(LLIB)(Kernel_Stop.o)\
    $(LLIB)(Kernel_WDog.o)\
-   $(LLIB)(Kernel_Who.o)\
    $(LLIB)(kernel_who.o)
 	@echo lib is up to date
 
 #--------------------------------------------------------------------------#
 #  lib dependencies
 #
-$(LLIB)(Kernel_Ack.o):	              Kernel_Ack.c\
+$(LLIB)(Kernel_Ack.o):	             Kernel_Ack.c\
    $(INC)/message.h               \
    ./kernel.h              
 $(LLIB)(Kernel_Apnd.o):	             Kernel_Apnd.c\
    $(INC)/message.h               \
    ./kernel.h              
-$(LLIB)(Kernel_Close.o):	            Kernel_Close.c\
+$(LLIB)(Kernel_Close.o):	         Kernel_Close.c\
    $(INC)/message.h               
-$(LLIB)(Kernel_Err.o):	              Kernel_Err.c\
+$(LLIB)(Kernel_Err.o):	             Kernel_Err.c\
    $(INC)/message.h               \
    ./kernel.h              
 $(LLIB)(Kernel_File.o):	             Kernel_File.c\
@@ -74,17 +72,17 @@ $(LLIB)(Kernel_File.o):	             Kernel_File.c\
 $(LLIB)(Kernel_Find.o):	             Kernel_Find.c\
    $(INC)/message.h               \
    ./kernel.h              
-$(LLIB)(Kernel_Flush.o):	            Kernel_Flush.c\
+$(LLIB)(Kernel_Flush.o):	         Kernel_Flush.c\
    $(INC)/message.h               \
    ./kernel.h              
-$(LLIB)(Kernel_Get.o):	              Kernel_Get.c\
-   $(INC)/message.h               
-$(LLIB)(Kernel_Log.o):	              Kernel_Log.c\
+$(LLIB)(Kernel_Get.o):	             Kernel_Get.c\
+   $(INC)/message.h              
+$(LLIB)(Kernel_Log.o):	             Kernel_Log.c\
    $(INC)/message.h               \
    ./kernel.h              
-$(LLIB)(Kernel_Msg.o):	              Kernel_Msg.c\
+$(LLIB)(Kernel_Msg.o):	             Kernel_Msg.c\
    $(INC)/message.h               \
-   ./kernel.h              \
+   ./kernel.h                     \
    ./kernel_types.h        
 $(LLIB)(Kernel_Name.o):	             Kernel_Name.c\
    $(INC)/message.h               \
@@ -95,37 +93,33 @@ $(LLIB)(Kernel_Open.o):	             Kernel_Open.c\
 $(LLIB)(Kernel_Pack.o):	             Kernel_Pack.c\
    $(INC)/message.h               \
    ./kernel.h              
-$(LLIB)(Kernel_Purge.o):	            Kernel_Purge.c\
+$(LLIB)(Kernel_Purge.o):	         Kernel_Purge.c\
    $(INC)/message.h               \
    ./kernel.h              
-$(LLIB)(Kernel_Put.o):	              Kernel_Put.c\
+$(LLIB)(Kernel_Put.o):	             Kernel_Put.c\
    $(INC)/message.h               \
    ./kernel.h              
-$(LLIB)(Kernel_Selct.o):	            Kernel_Selct.c\
+$(LLIB)(Kernel_Selct.o):	         Kernel_Selct.c\
    $(INC)/message.h               \
    $(INC)/message_types.h         \
    ./kernel.h              
 $(LLIB)(Kernel_Shut.o):	             Kernel_Shut.c\
    $(INC)/message.h               \
    ./kernel.h              
-$(LLIB)(Kernel_Sig.o):	              Kernel_Sig.c\
+$(LLIB)(Kernel_Sig.o):	             Kernel_Sig.c\
    $(INC)/message.h               \
    ./kernel.h              
 $(LLIB)(Kernel_Stop.o):	             Kernel_Stop.c\
    $(INC)/message.h               \
-   ./kernel.h              \
-   ./kernel_types.h        \
+   ./kernel.h                     \
+   ./kernel_types.h               \
    $(INC)/message_types.h         
 $(LLIB)(Kernel_WDog.o):	             Kernel_WDog.c\
    $(INC)/message.h               \
    ./kernel.h              
-$(LLIB)(Kernel_Who.o):	              Kernel_Who.c\
+$(LLIB)(kernel_who.o):	             kernel_who.c\
    $(INC)/message.h               \
-   ./kernel.h              \
-   ./kernel_types.h        
-$(LLIB)(kernel_who.o):	              kernel_who.c\
-   $(INC)/message.h               \
-   ./kernel.h              \
+   ./kernel.h                     \
    ./kernel_types.h        
 
 #--------------------------------------------------------------------------#
@@ -170,33 +164,33 @@ progs:\
 #--------------------------------------------------------------------------#
 #  progs dependencies
 #
-$(OBJ)/kernel.o:                  kernel.c\
-   $(INC)/message.h               \
+$(OBJ)/kernel.o: kernel.c\
+   $(INC)/message.h        \
    ./kernel.h              \
    ./kernel_types.h        \
    ./kernel_data.h         ; @$(COMPILE)
 $(BIN)/kernel:   $(OBJ)/kernel.o   $(LIBS); @$(LINK)
-$(OBJ)/kernel2.o:                 kernel2.c\
-   $(INC)/message.h               \
+$(OBJ)/kernel2.o: kernel2.c\
+   $(INC)/message.h        \
    ./kernel.h              \
    ./kernel_types.h        \
    ./kernel_data.h         ; @$(COMPILE)
 $(BIN)/kernel2:   $(OBJ)/kernel2.o   $(LIBS); @$(LINK)
-$(OBJ)/kernel_clear.o:            kernel_clear.c\
+$(OBJ)/kernel_clear.o: kernel_clear.c\
    $(INC)/message.h               ; @$(COMPILE)
 $(BIN)/kernel_clear:   $(OBJ)/kernel_clear.o   $(LIBS); @$(LINK)
-$(OBJ)/kernel_print.o:            kernel_print.c\
-   $(INC)/message.h               \
+$(OBJ)/kernel_print.o: kernel_print.c\
+   $(INC)/message.h        \
    ./kernel.h              \
    ./kernel_data.h         \
    ./kernel_types.h        \
    $(INC)/message_types.h         ; @$(COMPILE)
 $(BIN)/kernel_print:   $(OBJ)/kernel_print.o   $(LIBS); @$(LINK)
-$(OBJ)/kernel_test.o:             kernel_test.c\
+$(OBJ)/kernel_test.o: kernel_test.c\
    $(INC)/message.h               ; @$(COMPILE)
 $(BIN)/kernel_test:   $(OBJ)/kernel_test.o   $(LIBS); @$(LINK)
-$(OBJ)/kernel_who.o:              kernel_who.c\
-   $(INC)/message.h               \
+$(OBJ)/kernel_who.o: kernel_who.c\
+   $(INC)/message.h        \
    ./kernel.h              \
    ./kernel_types.h        ; @$(COMPILE)
 $(BIN)/kernel_who:   $(OBJ)/kernel_who.o   $(LIBS); @$(LINK)
