@@ -36,6 +36,10 @@
 static char monitor_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <time.h>
 #include "Bard.h"
 #include "ss.h"
 #include "co.h"
@@ -67,10 +71,40 @@ extern show_size(), show_bf(), show_io();
 
 #define MAX 22
 
-void (*where[MAX])() = {show_sp, show_rf, show_coh, show_po, show_pl,
-show_zone, show_bay, show_hw, show_bl, show_zc, show_mod, show_sku,
-show_order, show_block, show_group, show_oc_header, show_oc_tab,
-show_pp, show_pz, show_size, show_bf, show_io};
+//void (*where[MAX]) = {show_sp, show_rf, show_coh, show_po, show_pl,
+//show_zone, show_bay, show_hw, show_bl, show_zc, show_mod, show_sku,
+//show_order, show_block, show_group, show_oc_header, show_oc_tab,
+//show_pp, show_pz, show_size, show_bf, show_io};
+
+// Replaced jump table with switch. Simpler, safer, and optimizer will make it just as fast. where[] has no bounds checking.
+void where(int c) {
+    switch(c)
+    {
+        case  0: show_sp; break;
+        case  1: show_rf; break;
+        case  2: show_coh; break; 
+        case  3: show_po;  break;
+        case  4: show_pl; break;
+        case  5: show_zone; break;
+        case  6: show_bay; break;
+        case  7: show_hw; break;
+        case  8: show_bl; break;
+        case  9: show_zc; break;
+        case 10: show_mod; break;
+        case 11: show_sku; break;
+        case 12: show_order; break;
+        case 13: show_block; break;
+        case 14: show_group; break;
+        case 15: show_oc_header; break;
+        case 16: show_oc_tab; break;
+        case 17: show_pp; break;
+        case 18: show_pz; break;
+        case 19: show_size; break;
+        case 20: show_bf; break;
+        case 21: show_io; break;
+        default: assert(0);
+    }
+}
 
 /*-------------------------------------------------------------------------*
  *   M A I N    L O O P
@@ -122,7 +156,8 @@ main()
   
     if (c < 0 || c >= MAX) break;
 
-    (*where[c])();
+    //where[c]();
+    where(c);
   }
   pending_close();
 
