@@ -15,9 +15,10 @@
  *-------------+-----------------------------------------------------------*
  *  08/03/95   |  tjt  Original implementation.
  *-------------------------------------------------------------------------*/
-static char label_c[] = "%Z% %M% %I% (%G% - %U%)";
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ss.h"
 #include "co.h"
 #include "Bard.h"
@@ -26,8 +27,9 @@ static char label_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "bard/restock_notice.h"
 
 #define random(x)    (rand() % (x))
-#define randomize(x) (rand(x))
+#define randomize(x) (rand_r(&x))
 
+static char label_c[] = "%Z% %M% %I% (%G% - %U%)";
 pmfile_item x;
 
 main(argc, argv)
@@ -37,7 +39,8 @@ char **argv;
   putenv("_=label");
   chdir(getenv("HOME"));
 
-  randomize(time(0) % 4095);
+  unsigned int rand_state = (time(0) % 4095); // Used to store rand()'s state.
+  randomize(rand_state); // Weak pseudo random number generator state init.
 
   database_open();
 
