@@ -34,12 +34,15 @@ static char of_diags_c[] = "%Z% %M% %I% (%G% - %U%)";
  *  i = input to clobber order indices
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <signal.h>
+
 #include "Bard.h"
 #include "global_types.h"
 #include "of.h"
 
-#define NULL            0x01              /* valid null index entry          */
+#define NULL_INDEX      0x01              /* valid null index entry          */
 #define BAD             0x02              /* order is marked bad             */
 #define HEAD            0x04              /* blink invalid or null           */
 #define TAIL            0x08              /* flink invalid or null           */
@@ -445,7 +448,7 @@ check_queues()
       {
         if (flag[m] & BAD)              break;
         if (flag[m] & VISITED)  break;
-        if (flag[m] & NULL)             break;
+        if (flag[m] & NULL_INDEX)             break;
                                 
         count++;
         last = m + 1;
@@ -527,7 +530,7 @@ check_raw_linkages()
     }
     if (y)
     {
-      if (flag[m] & NULL)
+      if (flag[m] & NULL_INDEX)
       {
         printf(" .. Pickline %d Order %05d Invalid Back Link\n",
           x->oi_pl, x->oi_on);
@@ -570,7 +573,7 @@ check_raw_linkages()
     }
     if (z)
     {
-      if (flag[n] & NULL)
+      if (flag[n] & NULL_INDEX)
       {
         printf(" .. Pickline %d Order %05d Invalid Forward Link\n",
         x->oi_pl, x->oi_on);
@@ -696,7 +699,7 @@ check_status()
   }
   for (x = oc->oi_tab, k = 0; k < oc->of_size; k++, x++)
   {
-    if (flag[k] & (NULL | BAD | MARKED))
+    if (flag[k] & (NULL_INDEX | BAD | MARKED))
     {
       flag[k] &= ~MARKED;
       continue;
@@ -708,7 +711,7 @@ check_status()
     total_valid--;
     if (rflag) 
     {
-      flag[k] = NULL;
+      flag[k] = NULL_INDEX;
       memset(x, 0, sizeof(struct oi_item));
     }
   }
@@ -720,7 +723,7 @@ check_status()
 /*-------------------------------------------------------------------------*
  *  Check Valid Order Block Sizes
  *
- *  Flag becomes either NULL, BAD, or zero.
+ *  Flag becomes either NULL_INDEX, BAD, or zero.
  *-------------------------------------------------------------------------*/
 check_index_entries()
 {
@@ -741,12 +744,12 @@ check_index_entries()
   {
     if (!x->oi_on)                        /* no order number                 */
     {
-      flag[k] |= NULL;
+      flag[k] |= NULL_INDEX;
       continue;
     }
     if (x->oi_pl > PicklineMax && x->oi_pl <= PicklineMax+SegmentMax) 
     {
-      flag[k] = NULL | BAD;
+      flag[k] = NULL_INDEX | BAD;
       continue;
     }
     total_orders++;                       /* count orders                    */
@@ -825,7 +828,7 @@ dump_tables()
     k + 1, x->oi_pl, x->oi_on, x->oi_blink, x->oi_flink);
                         
     printf(" queue: %d", x->oi_queue);
-    if (flag[k] & NULL)   printf(" NULL");
+    if (flag[k] & NULL_INDEX)   printf(" NULL_INDEX");
     if (flag[k] & BAD)    printf(" BAD");
     if (flag[k] & HEAD)   printf(" HEAD");
     if (flag[k] & TAIL)   printf(" TAIL");
