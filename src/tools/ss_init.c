@@ -19,6 +19,9 @@
 static char ss_init_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "file_names.h"
 #include "ss.h"
 #include "ss_init.h"
@@ -147,7 +150,7 @@ FILE *fd;
 unsigned char *p;
 Tinit_item *q;
 {
-  unsigned char *memchr();
+  //unsigned char *memchr();
   unsigned char buf[128], *r, *s, *t;
   unsigned long work, count, len;
   unsigned short word;
