@@ -793,7 +793,7 @@ lock_order_index()
         
   printf("Locking Entire Order Index\n");
 
-  signal(SIGALRM, timeout);
+  signal(SIGALRM, &timeout);
   alarm(15);                              /* timeout in 15 seconds           */
 
   oc_lock();

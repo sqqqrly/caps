@@ -31,6 +31,7 @@ static char ac_view_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+#include <assert.h>
 #include "iodefs.h"
 #include "ss.h"
 #include "co.h"
@@ -89,8 +90,9 @@ char **argv;
   register long j, k;
 
   putenv("_=ac_view");
-  const char *homeDir = getenv("HOME");
-  chdir(homeDir);
+  const char *homeDir = (char *)getenv("HOME");
+  if (homeDir) { chdir(homeDir); }
+  else { assert(0); }
 
   ss_open();
   co_open();

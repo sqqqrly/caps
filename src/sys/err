@@ -1,7 +1,0 @@
-In file included from ac_view.c:36:
-/u/mfc/src/h/co.h:136:1: warning: "HasBadgeReader" redefined
-/u/mfc/src/h/co.h:123:1: warning: this is the location of the previous definition
-/u/mfc/src/h/co.h:138:1: warning: "IsDummy" redefined
-/u/mfc/src/h/co.h:132:1: warning: this is the location of the previous definition
-ac_view.c: In function ‘main’:
-ac_view.c:92: warning: initialization makes pointer from integer without a cast

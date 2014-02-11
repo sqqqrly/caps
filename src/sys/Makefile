@@ -18,7 +18,9 @@ BIN=$(HOME)/bin
 #--------------------------------------------------------------------------#
 #  link libraries - leave order of LIBS as is !!!
 #
+LIBPATH=-L$(ORACLE_HOME)/lib -L$(HOME)/lib
 LIBS=$(CLIB) $(BLIB) $(SLIB) $(HOME)/lib/libocaps.a
+
 #--------------------------------------------------------------------------#
 #  compile parameters
 #
@@ -63,16 +65,16 @@ COMPILE=\
 	echo "1-Move [$(@F)] To [$(OBJ)]";echo;\
 	mv $(@F) $(OBJ)
 
+# /oracle/app/oracle/product/11.2.0/dbhome_1/lib/libsql11.a
+# note: scorept.o is a bare object from oracle's lib dir.
+
 LINK=\
 	echo "3 Link    [$@]   From [$(OBJ)/$(@F).o]";echo;\
-	cc  $(LFLAGS) -o$@ $(OBJ)/$(@F).o  $(LIBS) -L$(LD_LIBRARY_PATH)/ -lclntsh  -lclient11 $(LD_LIBRARY_PATH)/libsql11.a $(LD_LIBRARY_PATH)/scorept.o $(LD_LIBRARY_PATH)/sscoreed.o $(LD_LIBRARY_PATH)/nautab.o $(LD_LIBRARY_PATH)/naeet.o $(LD_LIBRARY_PATH)/naect.o $(LD_LIBRARY_PATH)/naedhs.o -lnbeq11  -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 -lntcp11 -lntns11 -ln11 -lnl11 -lnro11 -lnbeq11  -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 \
--lntcp11 -lntns11 -lnbeq11  -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 -lntcp11 -lntns11 -ln11 -lnl11 -lclient11 -lvsn11 -lcommon11 -lskgxp11 -lgeneric11 -lpls11 -lnls11  -lcore11 -lnls11 -lcore11  -lnls11 -lnbeq11  -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 -lntcp11 -lntns11 -ln11 -lnl11 -lnro11 -lnbeq11  -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 -lntcp11 -lntns11 -ln11 -lnl11 -lclient11 -lvsn11 -lcommon11 -lskgxp11 -lgeneric11 -lpls11    $(LD_LIBRARY_PATH)/libpls11.a $(LD_LIBRARY_PATH)/libplp11.a $(LD_LIBRARY_PATH)/libpls11.a  -lnls11  -lcore11 -lnls11 -lcore11  -lnls11  -lclient11 -lvsn11 -lcommon11 -lskgxp11 -lgeneric11 -lpls11    -lnls11  -lcore11 -lnls11 -lcore11  -lnls11 -lnsl -ldl -lm -lpthread 2> err;
+	cc  $(LFLAGS) -o$@ $(OBJ)/$(@F).o $(LIBPATH) -locaps -lclntsh -lclient11 -lsql11 $(ORACLE_HOME)/lib/scorept.o $(ORACLE_HOME)/lib/sscoreed.o $(ORACLE_HOME)/lib/nautab.o $(ORACLE_HOME)/lib/naeet.o $(ORACLE_HOME)/lib/naect.o $(ORACLE_HOME)/lib/naedhs.o -lnbeq11 -lnhost11 -lnus11 -lldapclnt11 -lnsslb11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lntns11 -lnl11 -lnro11 -lvsn11 -lcommon11 -lskgxp11 -lgeneric11 -lpls11 -lnls11 -lcore11 -lplp11 -lnsl -ldl -lm -lpthread 2> err;
 LLINK=\
 	echo "4 Link    [$@]   From [$(OLIB)($(@F).o)]"; echo;\
 	ar -x $(OLIB) $(@F).o;\
-	cc  $(LFLAGS) -o$@ $(OBJ)/$(@F).o  $(LIBS) -L$(LD_LIBRARY_PATH)/ -lclntsh -lclient11 $(LD_LIBRARY_PATH)/libsql11.a $(LD_LIBRARY_PATH)/scorept.o $(LD_LIBRARY_PATH)/sscoreed.o $(LD_LIBRARY_PATH)/nautab.o $(LD_LIBRARY_PATH)/naeet.o $(LD_LIBRARY_PATH)/naect.o $(LD_LIBRARY_PATH)/naedhs.o -lnbeq11  -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 -lntcp11 -lntns11 -ln11 -lnl11 -lnro11 -lnbeq11  -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 -lntcp11 -lntns11 -lnbeq11  -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 -lntcp11 -lntns11 -ln11 -lnl11 -lclient11 -lvsn11 -lcommon11 -lskgxp11 -lgeneric11 -lpls11 \
--lnls11  -lcore11 -lnls11 -lcore11  -lnls11 -lnbeq11  -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 -lntcp11 -lntns11 -ln11 -lnl11 -lnro11 -lnbeq11 -lnhost11 -lnus11   -lldapclnt11 -lnsslb11  -ln11 -ln11 -lnoname11 -lntcp11 -lntcps11 -lnsslb11 -lntcp11 -lntns11 \
--ln11 -lnl11 -lclient11 -lvsn11 -lcommon11 -lskgxp11 -lgeneric11 -lpls11    $(LD_LIBRARY_PATH)/libpls11.a $(LD_LIBRARY_PATH)/libplp11.a $(LD_LIBRARY_PATH)/libpls11.a -lnls11  -lcore11 -lnls11 -lcore11  -lnls11  -lclient11 -lvsn11 -lcommon11 -lskgxp11 -lgeneric11 -lpls11    -lnls11  -lcore11 -lnls11 -lcore11  -lnls11 -lnsl -ldl -lm  -lpthread 2> err;\
+	cc  $(LFLAGS) -o$@ $(OBJ)/$(@F).o  $(LIBPATH) $(LIBS) -lclntsh -lclient11 -lsql11 $(ORACLE_HOME)/lib/scorept.o $(ORACLE_HOME)/lib/sscoreed.o $(ORACLE_HOME)/lib/nautab.o $(ORACLE_HOME)/lib/naeet.o $(ORACLE_HOME)/lib/naect.o $(ORACLE_HOME)/lib/naedhs.o -lnbeq11 -lnhost11 -lnus11 -lldapclnt11 -lnsslb11  -ln11 -lnoname11 -lntcp11 -lntcps11 -lntns11 -lnl11 -lnro11 -lvsn11 -lcommon11 -lskgxp11 -lgeneric11 -lpls11 -lnls11 -lcore11 -lplp11 -lnsl -ldl -lm -lpthread 2> err;\
 	rm $(@F).o
 
 CCLINK=\
@@ -111,6 +113,8 @@ include Makeinc
 #
 begin:
 	@echo "--------------------------"
+	@echo "LIBSPATH: $(LIBPATH)"
+	@echo "LIBS    : $(LIBS)"
 	@date '+ %m/%d/%y         %H:%M:%S'
 	@echo " Making `pwd`"
 	@echo "--------------------------"
