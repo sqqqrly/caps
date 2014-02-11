@@ -20,9 +20,12 @@
 static char engine_test_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
+
 #include "caps_messages.h"
 #include "message_types.h"
 #include "engine_messages.h"
