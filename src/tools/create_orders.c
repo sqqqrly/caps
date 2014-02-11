@@ -19,12 +19,15 @@
 static char create_orders_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ss.h"
 #include "co.h"
 #include "st.h"
 
 #define random(x)    (rand() % (x))
-#define randomize(x) (rand(x))
+#define randomize(x) (rand_r(&x))
 
 FILE *fd;
 char fd_name[40];
@@ -65,7 +68,8 @@ char **argv;
   setbuf(stdin, NULL);                    /* Use unbuffered input            */
   setbuf(stdout, NULL);                   /* Use unbuffered output           */
     
-  if (argc > 1) randomize(time(0) % 1023);
+  unsigned int rand_state = (time(0) % 1023);
+  if (argc > 1) randomize(rand_state); // Weak pseudo random number generator state init.
 
   get_parms();
   generate_orders();
