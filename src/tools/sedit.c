@@ -413,9 +413,9 @@ save_image()
 save_text()
 {  
   long j, k;
-  char *p, *q;
+  unsigned char *p, *q;
   unsigned char LF   = 0x0a;
-  char work[MAX * 132];
+  unsigned char work[MAX * 132];
   
   memcpy(work, image, MAX * 132);
   
@@ -429,7 +429,7 @@ save_text()
   {
     switch (*p)
     {
-        case 22: //ULC:
+      case ULC:
       case URC:
       case LLC:
       case LRC:
