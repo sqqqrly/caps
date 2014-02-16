@@ -6458,7 +6458,7 @@ register long picker_id;
 	fprintf(DF, "After ModulePicked Loop \n");
 	fflush(DF);
 #endif
-#ifdef TANDY!!
+#ifdef TANDY_BANG_BANG
         if (h->hw_mod == z->zt_last_light && clear_flag)
            {
               h->hw_flags &= ~ModulePicked;
@@ -6496,7 +6496,7 @@ register long picker_id;
               h->hw_save    = 0;
               h->hw_current = 0;
               h->hw_flags  &= SwitchesDisabled;
-#ifdef TANDY!!
+#ifdef TANDY_BANG_BANG
            }
 #endif
       	sprintf(text, "%04d10%03dB", h->hw_controller, h->hw_mod_address);
