@@ -35,8 +35,12 @@
 static char alc_init_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <signal.h>
+#include <unistd.h>
 #include <errno.h>
+
 #include "message_types.h"
 #include "file_names.h"
 #include "global_types.h"
@@ -44,9 +48,8 @@ static char alc_init_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "ss.h"
 #include "co.h"
 
-extern leave();
-extern int errno;
-
+void leave(int notUsed);
+int errno;
 
 #define NoError        0                  /* successful action               */
 #define AddressError   1                  /* port has an addressign error    */
@@ -556,8 +559,7 @@ int  init_port()
 /*-------------------------------------------------------------------------*
  *  Graceful Exit
  *-------------------------------------------------------------------------*/
-  leave(x)
-  register long x;
+  void leave(int x)
   {
     long pid =0 , stat =0 ;
     char text[80], prt_name[16];
