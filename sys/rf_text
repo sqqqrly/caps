@@ -1,0 +1,25 @@
+(     : Record Preface Symbol
+)     : Record Terminator Symbol
+      : Field Terminator Symbol
+*     : End of File Symbol
+11    : Customer Number Length (0 .. 15)
+5     : Order Number Length    (1 .. 7)
+1     : Pickline Number Length (0 .. 2)
+3     : Group Length           (0 .. 4)
+1     : Priority Length        (0 .. 1)
+5     : SKU Length             (0 .. 15)
+4     : Module Length          (0 .. 5)
+4     : Quantity Length        (1 .. ?)
+0    : Remarks Length         (0 .. ?)
+0     : Box Offset             (0 .. ?)
+0     : Box Number Length      (0 .. 6)
+0     : Box Number Count       (0 .. 99)
+0     : Pick Text Length       (0 .. ?)
+6     : Stock Location Length  (0 .. ?)
+0     : Spare                  (0 .. ?)
+n     : Duplicate Pick Allowed (nys)
+y     : Skip Bad SKU           (hony)
+y     : Zero Quantity          (nys)
+y     : Hold Orders            (inky)
+y     : Ignore Remarks         (ny)
+y     : Ignore Pick Text       (ny)

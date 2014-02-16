@@ -1,0 +1,115 @@
+M F C    C A P  : System Name - 16 bytes + null
++++   Amway Georgia  * No.1 RDC! *   +++   : Company Name - 40 bytes + null
+4     : Maximum Number of Ports      (1 .. 32)
+4     : Maximum Number of Picklines  (1 .. 32)
+8     : Maximum Number of Segments   (1 .. 64)
+32    : Maximum Number of Zones      (1 .. 2000)
+200   : Maximum Number of Bays       (1 .. 2000)
+2000  : Maximum Number of Products   (1 .. 30000)
+2000  : Maximum Number of Modules    (1 .. 30000)
+2000  : Maximum Number of Lights     (1 .. 30000)
+30000 : Maximum Number of Orders     (1 .. 100000)
+1800  : Maximum Picks Per Order      (1 .. 32767)
+n     : Full Function                (nsy)
+n     : Basic Function               (nsy)
+y     : Total Function               (nys)
+n     : Multibin Matrix or Carousel  (ny)
+n     : Box Labels Feature           (ny)
+n     : Box Full Enable              (nyx)
+n     : Autocasing                   (nyi)
+n     : Jump Zone                    (ny)
+y     : Steering                     (ny)
+y     : Late Entry                   (ny)
+y     : Early Exit                   (ny)
+y     : Master Bay Lamps             (ny)
+n     : Stkloc In Order Input        (ny)
+n     : Pickline Zero Input          (nyz)
+n     : Check Controllers            (ny)
+n     : Pending Operations           (ny)
+n     : PM Records Without SKU       (ny)
+n     : UM In Pick Text              (any)
+0     : Blink Over                 (0 .. 255)
+n     : Lot Control                  (ny)
+y     : SKU Support                  (ny)
+n     : Product Mirroring            (ny)
+y     : Productivity                 (ny)
+n     : Label Printing               (ny)
+n     : Inventory Accum              (ny)
+n     : Process Restock Notices      (ny)
+y     : Process Short Notices        (ny)
+n     : Pickline Zero Order Cmds     (nyc)
+n     : Pickline Zero Group Cmds     (nyc)
+y     : Order Input w/o Config       (ny)
+y     : Commo Orders Input           (nky)
+y     : Commo Trans Output           (nky)
+y     : Commo Prodfile               (nky)
+0     : Picker Order Count           (0 .. 50)
+n     : Delete Empty Boxes           (ny)
+n     : Zone Status Events           (ny)
+y     : Late Entry One Button Push   (ny)
+y     : No Pick One Button Push      (ny)
+y     : No Pick EE One Button Push   (ny)
+y     : Pickline Module View         (ny)
+y     : Remaining Picks              (nuy)
+10     : Port Init Timeout            (1 .. 255)
+8     : Short Counting Ticks         (1 .. 32)
+30    : Markplace Timeout         (30 .. 255)
+120   : Restoreplace Timeout     (60 .. 1000)
+n     : Order Input Purge            (mnxcwy)
+n     : Use Customer Order Number    (biny)
+x     : System In Process Status     (xcimnr)
+n     : Initialize Status            (ny)
+n     : Configuration Status         (ny)
+n     : Running Status               (ny)
+y     : Port By Name                 (ny)
+y     : Pickline By Name             (ny)
+y     : Order Selection              (ny)
+c     : Order Input Mode             (cd)
+d     : Transaction Output Mode      (cd)
+y     : Short Printing Enabled       (ny)
+n     : Restock Printing Enabled     (ny)
+x     : Box Packing List Mode        (xbcdmz)
+x     : Tote Label Printing Mode     (xabcemnz)
+0     : Tote Label Ahead Count       (0 .. 255)
+x     : Shipping Label Printing Mode (xbcemnz)
+x     : Packing List Printing Mode   (xbcdmz)
+0     : Short Notices Printed
+0     : Short Notices Enqueued
+0     : Restock Notices Printed
+0     : Restock Notices Enqueued
+0     : Tote Labels Printed
+0     : Tote Labels Enqueued
+0     : Ship Labels Printed
+0     : Ship Labels Enqueued
+0     : Packing Lists Printed
+0     : Packing Lists Enqueued
+0     : Box Packing Lists Printed
+0     : Box Packing Lists Enqueued
+0     : Product File Log Count
+0     : Network Buffer Queue Count
+0     : Tote Label Order Last Printed
+0     : Tote Label Order Last Enqueued
+0     : Shipping Label Order Last Printed
+0     : Shipping Label Order Last Enqueued
+0     : Packing List Order Last Printed
+0     : Packing List Order Last Enqueued
+360   : Save Segments Interval Seconds
+0     : Order Purge Lag Window Seconds
+0     : Transaction File Count
+0     : Transaction File Xmit
+h     : Diskette Format (hlsd)
+b     : Transaction Output Flag    (nbqy)
+n     : Spare                      (ny)
+y     : Transaction - complete     (ny)
+n     : Transaction - cancel       (ny)
+n     : Transaction - underway     (ny)
+n     : Transaction - repick       (ny)
+n     : Transaction - manual input (ny)
+n     : Transaction - short        (ny)
+n     : Transaction - restock      (ny)
+n     : Transaction - wave         (ny)
+n     : Transaction - box close    (ny)
+n     : Transaction - pick event   (ny)
+n     : Transaction - order queued (ny)
+n     : Transaction - lot split    (ny)
+n     : Spare                      (ny)
