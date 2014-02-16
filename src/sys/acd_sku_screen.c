@@ -24,6 +24,10 @@
 static char acd_sku_screen_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "iodefs.h"
 #include "sd.h"
 #include "ss.h"
@@ -114,7 +118,7 @@ add_sku()
     sd_cursor(0, 6, 1);
     sd_clear_rest();                      /* clear rest                      */
 
-    memset( buf, NULL, sizeof(buf) );
+    memset( buf, 0, sizeof(buf) );
 
     for(i = 0; i < 9; i++) sd_prompt(&fld[i],0);
 
@@ -275,8 +279,8 @@ change_sku()
     sd_cursor(0,6,1);
     sd_clear_rest();
 
-    memset( buf, NULL, sizeof(buf) );     /* clear input buffers             */
-    memset( cbuf, NULL, sizeof(cbuf) );   /* clear copy buffers              */
+    memset( buf, 0, sizeof(buf) );     /* clear input buffers             */
+    memset( cbuf, 0, sizeof(cbuf) );   /* clear copy buffers              */
 
                 /* get initial entered value (SKU) */
     sd_prompt(&fld[0],0);
@@ -476,7 +480,7 @@ delete_sku()
     sd_cursor(0,6,1);
     sd_clear_rest();
 
-    memset( buf, NULL, sizeof(buf) );     /* clear input buffers             */
+    memset( buf, 0, sizeof(buf) );     /* clear input buffers             */
 
     sd_prompt(&fld[0],0);
 
