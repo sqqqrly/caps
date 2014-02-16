@@ -45,7 +45,11 @@
 static char alc_diag_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
+
 #include "file_names.h"
 #include "co.h"
 #include "st.h"
@@ -63,7 +67,9 @@ long called   = 0;                        /* TRUE if caller waiting to kill  */
 
 FILE *pfd = 0;                            /* print file                      */
 char pname[16];                           /* print file name                 */
-long parm[4] = {0};                       /* print parameter                 */
+char parm[4] = {0};                       /* print parameter                 */
+
+void stop_it(int notUsed);
 
 main(argc, argv)
 long argc;
@@ -71,7 +77,6 @@ char **argv;
 {
   register long k;
   char text[64];
-  extern stop_it();
 
   putenv("_=alc_diag");
   chdir(getenv("HOME"));
@@ -102,7 +107,8 @@ char **argv;
   {
     if (strcmp(argv[3], "-print") == 0)
     {
-      strcpy(parm, "-p");
+      char dashP[] = "-p";
+      strcpy(parm, dashP);
       tmp_name(pname);
       pfd = fopen(pname, "w");
     }
@@ -448,7 +454,7 @@ test_sm()
     }
     ac_write(fd, buf, strlen(buf));
   }
-  stop_it();                              /* should never get here !!!       */
+  stop_it(SIGINT);                              /* should never get here !!!       */
 }
 /*--------------------------------------------------------------------------*/
 /*  Initialize All Ports                                                    */
@@ -727,7 +733,7 @@ fork_k_ways()
     children--;
   }
   printf("Test %s Done\r\n\n", test);
-  stop_it();
+  stop_it(SIGINT);
 }
 /*--------------------------------------------------------------------------*
  *  Close All Open Files
@@ -759,7 +765,7 @@ close_all()
 /*--------------------------------------------------------------------------*/
 /*  Terminate Processing On Shutdown Event                                  */
 /*--------------------------------------------------------------------------*/
-stop_it()
+void stop_it(int notUsed)
 {
 #ifdef DEBUG
   fprintf(stderr, "alc_diag: stop_it()  pid=%d\n",getpid());
