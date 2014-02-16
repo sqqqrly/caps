@@ -99,6 +99,7 @@ static char alc_c[] = "%Z% %M% %I% (%G% - %U%)";
                                           /* ac_write()                     */
 #define MAX_CMD_LGTH   240                /* maximum length of command for  */
                                           /* message sent to ac_write()     */
+void leave(flag);
 
 long microclock();
 
@@ -5401,7 +5402,7 @@ simulator()
 /*-------------------------------------------------------------------------*
  *  Graceful Exit
  *-------------------------------------------------------------------------*/
-leave(flag)
+void leave(flag) // flag is a signum
 register long flag;
 {
   close_ports();
