@@ -155,7 +155,7 @@ char *buffer;
     sd_cursor(0, 6, 1);
     sd_clear_rest();
 
-    memset( buf, NULL, sizeof(buf) );     /* clear input buffers             */
+    memset( buf, 0, sizeof(buf) );     /* clear input buffers             */
     display_prompts();
     memset(&pkm_rec, 0, sizeof(pmfile_item));
     pm_default_rec(&pkm_rec);
