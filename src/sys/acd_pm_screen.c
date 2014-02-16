@@ -29,7 +29,10 @@ static char acd_pm_screen_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "caps_copyright.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
+
 #include "iodefs.h"
 #include "eh_nos.h"
 #include "sd.h"
