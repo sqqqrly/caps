@@ -292,7 +292,7 @@ char *buffer;
   long count;
   unsigned char t;
   
-  memset( buf, NULL, sizeof(buf) );      /* clear input buffers             */
+  memset( buf, 0, sizeof(buf) );      /* clear input buffers             */
   count = 0;
   
   fix(assign_pm_screen);
@@ -307,7 +307,7 @@ char *buffer;
     sd_clear_rest();
     display_prompts();
     memset(&pkm_rec, 0, sizeof(pmfile_item));
-    memset( buf, NULL, sizeof(buf) );     /* clear input buffers             */
+    memset( buf, 0, sizeof(buf) );     /* clear input buffers             */
     if(buffer) 
     {
       strcpy(buf[2], buffer);
@@ -489,7 +489,7 @@ change_pm()
   fflush(stderr);
 #endif
   
-  memset( buf, NULL, sizeof(buf) );      /* clear input buffers             */
+  memset( buf, 0, sizeof(buf) );      /* clear input buffers             */
 
   fix(change_pm_screen);
   sd_screen_off();
@@ -505,7 +505,7 @@ change_pm()
       sd_clear_rest();
       display_prompts();
       memset(&pkm_rec, 0, sizeof(pmfile_item));
-      memset( buf, NULL, sizeof(buf) );   /* clear input buffers             */
+      memset( buf, 0, sizeof(buf) );   /* clear input buffers             */
 
       have_pm_rec = 0;
       
@@ -597,7 +597,7 @@ deassign_pm()
 	long found=0;
 #endif
   
-  memset( buf, NULL, sizeof(buf) );      /* clear input buffers             */
+  memset( buf, 0, sizeof(buf) );      /* clear input buffers             */
 
   fix(deassign_pm_screen);
   sd_screen_off();
@@ -611,7 +611,7 @@ deassign_pm()
     sd_clear_rest();
     display_prompts();
     memset(&pkm_rec, 0, sizeof(pmfile_item));
-    memset( buf, NULL, sizeof(buf) );     /* clear input buffers             */
+    memset( buf, 0, sizeof(buf) );     /* clear input buffers             */
 
     while (1)
     {
@@ -742,7 +742,7 @@ move_pm()
   unsigned char t;
   register struct st_item *s;
     
-  memset( buf, NULL, sizeof(buf) );      /* clear input buffers             */
+  memset( buf, 0, sizeof(buf) );      /* clear input buffers             */
 
   fix(move_pm_screen);
   sd_screen_off();
@@ -756,7 +756,7 @@ move_pm()
     sd_clear_rest();
     display_prompts();
     memset(&pkm_rec, 0, sizeof(pmfile_item));
-    memset( buf, NULL, sizeof(buf) );   /* clear input buffers             */
+    memset( buf, 0, sizeof(buf) );   /* clear input buffers             */
 
     while (1)
     {
