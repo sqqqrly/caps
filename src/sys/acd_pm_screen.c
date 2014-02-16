@@ -32,6 +32,7 @@ static char acd_pm_screen_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "iodefs.h"
 #include "eh_nos.h"
