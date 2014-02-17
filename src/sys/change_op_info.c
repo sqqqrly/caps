@@ -18,7 +18,11 @@
 static char change_op_info_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <pwd.h>
+
 #include "file_names.h"
 #include "iodefs.h"
 #include "sd.h"
@@ -75,7 +79,7 @@ unsigned char *buf[] = {name, op.o_op_name, op.o_op_desc,
   op.o_op_sku, op.o_op_label};
 
 struct fld_parms fldyn ={22,35,15,1,&L5, "Change? (y/n)", 'a'};
-char yn[2];
+char yn0[2];
 
 char features[8][32];
 
@@ -281,14 +285,14 @@ main()
     if (t == RETURN)
     {
       sd_prompt(&fldyn, 0);
-      memset(yn, 0, 2);
+      memset(yn0, 0, 2);
       
       while (1)
       {
-        t = sd_input(&fldyn, 0, 0, yn, 0);
+        t = sd_input(&fldyn, 0, 0, yn0, 0);
         if (t == EXIT) leave();
-        if (code_to_caps(*yn) == 'y') break;
-        if (code_to_caps(*yn) == 'n') break;
+        if (code_to_caps(*yn0) == 'y') break;
+        if (code_to_caps(*yn0) == 'n') break;
         eh_post(ERR_YN, 0);
       }
       strip_space(op.o_op_name, 9); 
@@ -303,7 +307,7 @@ main()
       strip_space(op.o_op_sku, 32);
       strip_space(op.o_op_label, 32);
 
-      if (code_to_caps(*yn) == 'y')
+      if (code_to_caps(*yn0) == 'y')
       {
         if (strncmp(name, op.o_op_name, 8) != 0)
         {
