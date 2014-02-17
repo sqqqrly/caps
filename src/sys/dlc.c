@@ -20,6 +20,9 @@
 static char dlc_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "file_names.h"
 #include "message_types.h"
 #include "caps_messages.h"
