@@ -19,7 +19,11 @@
 static char com_menu_in_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
+
 #include "eh_nos.h"
 #include "iodefs.h"
 #include "sd.h"
@@ -27,7 +31,7 @@ static char com_menu_in_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "com_menu_in.t"
 
 extern leave();
-extern catcher();
+void catcher(int signum); // Signal handler
 
 short pid  = 0;
 short stat = 0;
@@ -94,7 +98,7 @@ char*   argv[];
  *  Death of Child Catcher
  *-------------------------------------------------------------------------*/
 
-catcher()
+void catcher(int signum)
 {
   long lpid, stat;
 
@@ -134,7 +138,7 @@ catcher()
       eh_post( LOCAL_MSG, "Bad Parameter" );/* bad parameter                 */
       break;
   }
-  return 0;
+  //return 0;
 }
 /*-------------------------------------------------------------------------*
  *      Display communication menu
