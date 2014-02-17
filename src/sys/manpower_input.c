@@ -29,6 +29,10 @@ static char manpower_input_c[] = "%Z% %M% %I% (%G% - %U%)";
 /****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "getparms.h"
 #include "iodefs.h"
 #include "sd.h"
@@ -61,7 +65,7 @@ struct fld_parms fld[] ={
   {10,48,3,1,&ONE, "Use Cummulative Productivity Rates (y/n) ?",'a'},
   {11,48,3,1,&THIRTY_TWO,"Enter Pick Rate File",'a'}
 };
-short i,j,n,pickline,index,si,rm,orders,underway;
+short i,j,n,pickline,index0,si,rm,orders,underway;
 unsigned char t;
 long value,time_int;
 char rates[50],*q;
@@ -92,39 +96,39 @@ main()
   if(SUPER_OP)
   {
     rm = 1;
-    index = 0;
+    index0 = 0;
   }
   else
   {
     rm = 0;
-    index = 1;
+    index0 = 1;
   }
-  for (j = index; j < 5; j++) sd_prompt(&fld[j],rm);
+  for (j = index0; j < 5; j++) sd_prompt(&fld[j],rm);
 
   sd_cursor(0,6 + rm, 57);                /* F071496 */
   sd_text("(Hrs:Min)");
    
-  si = index;                             /* save index                      */
+  si = index0;                             /* save index0                      */
 
   while(1)
   {
-    t = sd_input(&fld[index],rm,&rm,buf[index],0);
+    t = sd_input(&fld[index0],rm,&rm,buf[index0],0);
 
     if(t == EXIT) leave();
 
     else if(t == UP_CURSOR)
     {
-      if(index > si)
-      index--;
+      if(index0 > si)
+      index0--;
       else
-      index = 4;
+      index0 = 4;
       continue;
     }
     else if(t == DOWN_CURSOR || t == TAB)
     {
-      if (sp->sp_productivity == 'y' && index < 3) index++;
-      else if (index < 4) index++;
-      else index = si;
+      if (sp->sp_productivity == 'y' && index0 < 3) index0++;
+      else if (index0 < 4) index0++;
+      else index0 = si;
       continue;
     }
    
@@ -134,7 +138,7 @@ main()
       if(pickline < 0)
       {
         eh_post(ERR_PL, buf[0]);
-        index = 0;
+        index0 = 0;
         continue;
       }
     }
@@ -148,7 +152,7 @@ main()
     if (value > 99)
     {
       eh_postn(ERR_VALUE, value);
-      index = 1;
+      index0 = 1;
       continue;
     }
     time_int = value * 3600;              /* hours                           */
@@ -158,7 +162,7 @@ main()
       if (value > 59)
       {
         eh_postn(ERR_VALUE, value);
-        index = 1;
+        index0 = 1;
         continue;
       }
       time_int += value * 60;
@@ -166,7 +170,7 @@ main()
     if(time_int <= 0)
     {
       eh_post(ERR_VALUE, buf[1]);
-      index = 1;
+      index0 = 1;
       continue;
     }
 
@@ -174,7 +178,7 @@ main()
     if(orders == 0)
     {
       eh_post(ERR_RANGE,0);
-      index = 2;
+      index0 = 2;
       continue;
     }
     
@@ -183,7 +187,7 @@ main()
     else
     {
       eh_post(ERR_YN,0);
-      index = 3;
+      index0 = 3;
       continue;
     }
     if (sp->sp_productivity == 'y')
@@ -191,7 +195,7 @@ main()
       if(code_to_caps(*buf[4]) != 'n' && code_to_caps(*buf[4]) != 'y')
       {
         eh_post(ERR_YN,0);
-        index = 4;
+        index0 = 4;
         continue;
       }
     }
