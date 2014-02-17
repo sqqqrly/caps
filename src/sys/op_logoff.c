@@ -17,11 +17,14 @@
 static char logoff_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <signal.h>
 #include "iodefs.h"
 #include "sd.h"
 
-extern leave();                      /* graceful exit routine           */
+void leave(int signum);                   /* signal handler. graceful exit routine           */
 
 main(argc, argv)
 long argc;
@@ -34,12 +37,12 @@ char **argv;
   
   sd_open(leave);                         /* open messages to kernel         */
   sd_clear(0);
-  leave();
+  leave(0);
 }
 /*-------------------------------------------------------------------------*
  *  Logoff or Error Exit From CAPS
  *-------------------------------------------------------------------------*/
-leave()
+void leave(int signum)
 {
   sd_close();                             /* close tty server                */
 
