@@ -25,8 +25,11 @@
 static char caps_logout_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <signal.h>
 #include <errno.h>
+
 #include "message_types.h"
 #include "kernel_types.h"
 #include "sd.h"
