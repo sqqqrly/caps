@@ -32,6 +32,10 @@ static char inhibit_enable_pm_c[] = "%Z% %M% %I% (%G% - %U%)";
 /*                                                                          */
 /****************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "global_types.h"
 #include "getparms.h"
 #include "message_types.h"
