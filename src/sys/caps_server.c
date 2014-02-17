@@ -25,16 +25,20 @@
 static char caps_server_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <signal.h>
 #include <errno.h>
+#include <time.h>
+
 #include "message.h"
 #include "message_types.h"
 
 char HOME[64] = {"/u/mfc"};
 
-extern long catcher();
-extern long connection_timer();
-extern long ping_timer();
+void catcher(int signum); // Signal handler
+void connection_timer(int signum); // Signal handler
+void ping_timer(int signum); // Signal handler
 extern long leave();
 
 FILE *fd;                                  /* error and log file             */
@@ -162,17 +166,17 @@ handshake()
 /*-------------------------------------------------------------------------*
  *  Connection Timer
  *-------------------------------------------------------------------------*/
-long connection_timer()
+void connection_timer(int signum)
 {
   now = time(0);
   fprintf(fd, "Timeout: %24.24s\n", ctime(&now));
   fflush(fd);
-  return 0;
+  // return 0; // Signal handler must be void
 }
 /*-------------------------------------------------------------------------*
  *  Ping Timer
  *-------------------------------------------------------------------------*/
-long ping_timer()
+void ping_timer(int signum)
 {
   now = time(0);
   fprintf(fd, "Ping Timeout: %24.24s\n", ctime(&now));
@@ -183,10 +187,9 @@ long ping_timer()
 /*-------------------------------------------------------------------------*
  *  Signal Catcher
  *-------------------------------------------------------------------------*/
-long catcher( what )
-long what;
+void catcher(int signum)
 {
-  fprintf(fd, "Caught Signal %d\n", what);
+  fprintf(fd, "Caught Signal %d\n", signum);
   sleep(10);
   leave(9);
 }
