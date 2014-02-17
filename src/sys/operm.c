@@ -32,7 +32,11 @@
 static char operm_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
+
 #include "global_types.h"
 #include "file_names.h"
 #include "iodefs.h"
@@ -52,7 +56,7 @@ long RP_TIMEOUT = 600;
 long time_flag = 0;
 long redisplay_flag = 0;
 
-extern timer();
+void timer(int signum); // signal handler
 extern leave();
 extern catcher();
 extern TPickline get_pickline();
@@ -785,7 +789,7 @@ restore_place()
   }
   return 0;
 }
-timer()
+void timer(int signum)
 {
   eh_post(LOCAL_MSG, "*** CAPS Is Not Responding");
   time_flag = 0;
