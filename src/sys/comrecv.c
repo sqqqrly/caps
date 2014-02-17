@@ -29,7 +29,10 @@
 static char comrecv_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <signal.h>
+
 #include "sd.h"
 #include "ss.h"
 #include "file_names.h"
@@ -37,7 +40,7 @@ static char comrecv_c[] = "%Z% %M% %I% (%G% - %U%)";
 #define EOT 0x04                         /* EOF with ^icanon                */
 #define LF  0x0a
 
-extern  leave();
+void leave(int signum); // Signal handler
 
 FILE*   sku_fd;
 FILE*   tmp_fd;
@@ -86,7 +89,7 @@ char*   argv[];
 /*-------------------------------------------------------------------------*
  * Graceful Exit
  *-------------------------------------------------------------------------*/
-leave()
+void leave(int signum)
 {
   ss_close();
   sd_close();
