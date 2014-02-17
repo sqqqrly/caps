@@ -17,6 +17,10 @@
 static char input_editor_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "sd.h"
 
 long pid, status;
