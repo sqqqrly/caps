@@ -24,7 +24,11 @@
 static char diag_men0_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
+
 #include "iodefs.h"
 #include "global_types.h"
 #include "co.h"
@@ -35,7 +39,7 @@ static char diag_men0_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "language.h"
 
 extern leave();
-extern catcher();
+void catcher(int signum); // Signal handler
 
 short pid, status;
 
@@ -52,7 +56,7 @@ struct fld_parms fld[] ={
   {22, 48, 28, 1, &PORT, "Enter Port", 'a'},
 };
 char incode[2];
-char yn[2] = {0};
+char yn0[2] = {0}; // yn renamed to yn0. yn is a built-in func.
 char parm[8] = {0};
 char port[LPORT + 1] = {0};
 char device[16];
@@ -192,7 +196,7 @@ load_loop_test()
 /*--------------------------------------------------------------------------*
  *  Catch SIGTERM
  *--------------------------------------------------------------------------*/
-catcher()
+void catcher(int signum)
 {
   if (pid) kill(pid, SIGTERM);
   leave();
@@ -297,7 +301,7 @@ unsigned char get_print_parm()
   register unsigned char t;
   char buf[2];
   
-  memset(yn, 0, 2);
+  memset(yn0, 0, 2);
   memset(buf, 0, 2);
     
   while (1)
@@ -306,12 +310,12 @@ unsigned char get_print_parm()
     if (t == EXIT) leave();
     if (t == UP_CURSOR) break;
 
-    *yn = code_to_caps(*buf);
-    if (*yn == 'y' || *yn == 'n' || *yn == 'b') break;
+    *yn0 = code_to_caps(*buf);
+    if (*yn0 == 'y' || *yn0 == 'n' || *yn0 == 'b') break;
     eh_post(ERR_CODE, buf);
   }
-  if (*yn == 'y')      strcpy(parm, "-print");    
-  else if (*yn == 'b') strcpy(parm, "-bays");
+  if (*yn0 == 'y')      strcpy(parm, "-print");    
+  else if (*yn0 == 'b') strcpy(parm, "-bays");
   else memset(parm, 0, 4);
   return t;
 }
