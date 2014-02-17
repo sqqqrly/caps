@@ -29,12 +29,16 @@
 static char caps_client_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <time.h>
+
 #include "ss.h"
 #include "global_types.h"
 
@@ -47,12 +51,13 @@ static char caps_client_c[] = "%Z% %M% %I% (%G% - %U%)";
 FILE *fd;
 char *fd_name = "dat/log/caps_client.log";
 
-long interrupt_handler();
-long connect_timer();
-long wakeup();
+// Signal handlers
+void interrupt_handler(int signum);
+void connect_timer(int signum);
+void wakeup(int signum);
 
 struct hostent *h, *gethostbyname();
-struct sockaddr_in sin;
+struct sockaddr_in sock_fd;
 
 int    s;                                 /* socket handle                   */
 int    ret;
@@ -349,22 +354,22 @@ char *host, *port;
 /*-------------------------------------------------------------------------*
  *  Connect to Host Computer + Host Port
  *-------------------------------------------------------------------------*/
-  memset(&sin, 0, sizeof(sin));
-  sin.sin_family = AF_INET;
-  sin.sin_port   = htons(atoi(port));
-  memcpy(&sin.sin_addr, h->h_addr, h->h_length);
+  memset(&sock_fd, 0, sizeof(sock_fd));
+  sock_fd.sin_family = AF_INET;
+  sock_fd.sin_port   = htons(atoi(port));
+  memcpy(&sock_fd.sin_addr, h->h_addr, h->h_length);
   
   fprintf(fd, "Connecting To %d.%d.%d.%d Port %d\n", 
-    (sin.sin_addr.s_addr >> 24) & 0xff, (sin.sin_addr.s_addr >> 16) & 0xff,
-    (sin.sin_addr.s_addr >> 8) & 0xff,   sin.sin_addr.s_addr & 0xff,
-    ntohs(sin.sin_port));
+    (sock_fd.sin_addr.s_addr >> 24) & 0xff, (sock_fd.sin_addr.s_addr >> 16) & 0xff,
+    (sock_fd.sin_addr.s_addr >> 8) & 0xff,   sock_fd.sin_addr.s_addr & 0xff,
+    ntohs(sock_fd.sin_port));
 
   while (1)
   {
     signal(SIGALRM, connect_timer);
     alarm(TIMEOUT);
   
-    ret = connect(s, &sin, sizeof(sin));
+    ret = connect(s, &sock_fd, sizeof(sock_fd));
 
     alarm(0);
     if (!ret) break;                     /* we have a connection             */
@@ -386,9 +391,9 @@ char *host, *port;
   }
 #ifdef DEBUG
   fprintf(fd, "connect()\n");
-  fprintf(fd, "  sin_family [%d]\n", sin.sin_family);
-  fprintf(fd, "  sin_port   [%d]\n", sin.sin_port);
-  fprintf(fd, "  sin_addr   [%08x]\n", sin.sin_addr.s_addr);
+  fprintf(fd, "  sin_family [%d]\n", sock_fd.sin_family);
+  fprintf(fd, "  sin_port   [%d]\n", sock_fd.sin_port);
+  fprintf(fd, "  sin_addr   [%08x]\n", sock_fd.sin_addr.s_addr);
   fprintf(fd, "\n");
 #endif
   
@@ -397,20 +402,21 @@ char *host, *port;
 /*-------------------------------------------------------------------------*
  *  Connection Timeout
  *-------------------------------------------------------------------------*/
-long connect_timer()
+void connect_timer(int signum)
 {
   now = time(0);
 
   fprintf(fd, "Timeout: %24.24s\n", ctime(&now));
   fflush(fd);
   
-  return 0;
+  // signal handler must be void
+  //return 0;
 }
 
 /*-------------------------------------------------------------------------*
  *  Wakeup On New Data - Signal From Any Engine
  *-------------------------------------------------------------------------*/
-long wakeup()
+void wakeup(int signum)
 {
   signal(SIGUSR2, wakeup);                /* ignore any queue signals       */
 
@@ -419,23 +425,23 @@ long wakeup()
   fflush(fd);
 #endif
 
-  return 0;
+  // signal handler must be void
+  //return 0;
 }
 
 /*-------------------------------------------------------------------------*
  *  Signal Handler
  *-------------------------------------------------------------------------*/
-long interrupt_handler( sig )
-int sig;
+void interrupt_handler(int signum)
 {
-  switch (sig)
+  switch (signum)
   {
-    case SIGHUP:   fprintf(fd, "Got signal SIGHUP\n");  break;
-    case SIGINT:   fprintf(fd, "Got signal SIGINT\n");  break;
-    case SIGTERM:  fprintf(fd, "Got signal SIGTERM\n"); break;
-    case SIGQUIT:  fprintf(fd, "Got signal SIGQUIT\n"); break;
-    case SIGPIPE:  fprintf(fd, "Got signal SIGPIPE\n"); break;
-    default:       fprintf(fd, "Got signal %d\n", sig); break;
+    case SIGHUP:   fprintf(fd, "Got signal SIGHUP\n");     break;
+    case SIGINT:   fprintf(fd, "Got signal SIGINT\n");     break;
+    case SIGTERM:  fprintf(fd, "Got signal SIGTERM\n");    break;
+    case SIGQUIT:  fprintf(fd, "Got signal SIGQUIT\n");    break;
+    case SIGPIPE:  fprintf(fd, "Got signal SIGPIPE\n");    break;
+    default:       fprintf(fd, "Got signal %d\n", signum); break;
   }
   leave(4);
 }
