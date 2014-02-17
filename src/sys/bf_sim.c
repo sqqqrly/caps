@@ -18,6 +18,9 @@
 static char bf_sim_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ss.h"
 #include "co.h"
 #include "message_types.h"
@@ -34,6 +37,9 @@ unsigned char list[] = {ShutdownRequest, TCInputPacket, ConfigureEvent,
 #define ENABLED      0x0001
 #define TWOBUTTON    0x0002
 #define ONEBUTTON    0x0004
+#ifdef BOXFULL
+#   undef BOXFULL
+#endif
 #define BOXFULL      0x0008
 #define IMMED        0x0010
 #define PICKS        0x0020
