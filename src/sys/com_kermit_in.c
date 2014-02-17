@@ -26,10 +26,14 @@
 static char com_kermit_in_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <errno.h>
 #include <termio.h>
 #include <fcntl.h>
 #include <signal.h>
+
 #include "eh_nos.h"
 #include "iodefs.h"
 #include "ss.h"
@@ -44,8 +48,8 @@ static char com_kermit_in_c[] = "%Z% %M% %I% (%G% - %U%)";
 long    timeout = 0;
 
 extern leave();
-extern catcher();
-extern char *memchr();
+void catcher(int signum); // Signal handler
+//extern char *memchr();
 
 long com_fd = 0;
 char comdev[32];                             /* communication port           */
@@ -531,7 +535,7 @@ say_goodbye()
 /*-------------------------------------------------------------------------*
  *  Alarm Catcher - Kills Last Active Task
  *-------------------------------------------------------------------------*/
-catcher()
+void catcher(int signum)
 {
   char text[80];
 
@@ -540,7 +544,7 @@ catcher()
   fflush(stderr);
 #endif
 
-  return 0;
+  //return 0;
 }
 /*-------------------------------------------------------------------------*
  *  Get Com Port Name
