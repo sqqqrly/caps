@@ -18,10 +18,14 @@
 static char alc_suitcase_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <signal.h>
+#include <unistd.h>
+
 #include "file_names.h"
 
-extern stop_it();
+void stop_it(int signum);
 
 long fd = 0;                              /* ac port                         */
 long address;
@@ -61,7 +65,7 @@ char **argv;
                 {
                   printf("\r\n%s\r\n", "Open Suitcase Line Failed");
                   pause();
-                  stop_it();
+                  stop_it(0); // Warning: signal handler is getting zero. Not a valid signum.
                 }
                 sscanf(argv[2], "%d", &address);
                 ac_readdress(fd, address);
@@ -78,7 +82,7 @@ char **argv;
                 break;
   }
   pause();
-  stop_it();
+  stop_it(0); // Warning: signal handler is getting zero. Not a valid signum.
   exit(0);
 }
 
@@ -120,7 +124,7 @@ line_test()
 /*-------------------------------------------------------------------------*
  *  Terminate Processing On Shutdown Event                                  
  *-------------------------------------------------------------------------*/
-stop_it()
+void stop_it(int signum)
 {
   if (pid) kill(pid, SIGTERM);
   wait(&status);
