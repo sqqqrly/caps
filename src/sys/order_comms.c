@@ -37,6 +37,10 @@ static char order_comms_c[] = "%Z% %M% %I% (%G% - %U%)";
 /****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "global_types.h"
 #include "message_types.h"
 #include "caps_messages.h"
@@ -99,7 +103,7 @@ long db;                                  /* box database                    */
 
 unsigned char t;
 char buf[NUM_PROMPTS][BUF_SIZE];          /* array of buffers                */
-char yn[2];
+char yn0[2];
 short i,j,k,n,ret,found;
 
 unsigned char list[] = {ClientMessageEvent};
@@ -232,13 +236,13 @@ main()
     else if(*buf[1] == 'c')               /* cancel request                  */
     {
       sd_prompt(&fld[5], 0);
-      memset(yn, 0, 2);
+      memset(yn0, 0, 2);
       
       while(1)
       {
-        t = sd_input(&fld[5],0,0,yn,0);
+        t = sd_input(&fld[5],0,0,yn0,0);
         if(t == EXIT) leave();
-        *buf[5] = code_to_caps(*yn);
+        *buf[5] = code_to_caps(*yn0);
         if(*buf[5] == 'y') break;
         else if(*buf[5] == 'n')
         {
@@ -533,14 +537,14 @@ confirm()
   if (*buf[6] == 'y') return 1;            /* while zero pickline            */
   if (*buf[6] == 'n') return 0;
 
-  memset(yn, 0, 2);
+  memset(yn0, 0, 2);
   
   while(1)
   {
-    t = sd_input(&fld[6],0,0,yn,0);
+    t = sd_input(&fld[6],0,0,yn0,0);
     if (t == EXIT) leave();
     if (t == UP_CURSOR) return 0;
-    *buf[6] = code_to_caps(*yn);
+    *buf[6] = code_to_caps(*yn0);
     if (*buf[6] == 'y') return 1;
     if (*buf[6] == 'n') return 0;
 
