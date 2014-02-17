@@ -79,7 +79,11 @@ static char ofc_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "caps_copyright.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
+
 #include "global_types.h"
 #include "file_names.h"
 #include "eh_nos.h"
@@ -100,8 +104,8 @@ static char ofc_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "boxes.h"
 
 
-leave();                                  /* graceful exit routine           */
-port_timeout();                           /* watchdog on port requests       */
+void leave(int val);                      /* graceful exit routine           */
+void port_timeout(int signum);            /* signal handler. watchdog on port requests */
 long cvrt();
 
 #define Qtote 0
@@ -295,7 +299,7 @@ char **argv;
         {
           buf.ErrorMessage.m_error = LOCAL_MSG;
           strcpy(buf.ErrorMessage.m_text, "Redisplay Is Running");
-          message_put(who, ClientMessageEvent, &buf, strlen(&buf));
+          message_put(who, ClientMessageEvent, &buf, sizeof(buf)); //strlen(&buf));
           break;
         }
         redisplay_request = PortRedisplayRequest;
@@ -310,7 +314,7 @@ char **argv;
         {
           buf.ErrorMessage.m_error = LOCAL_MSG;
           strcpy(buf.ErrorMessage.m_text, "Redisplay Is Running");
-          message_put(who, ClientMessageEvent, &buf, strlen(&buf));
+          message_put(who, ClientMessageEvent, &buf, sizeof(buf)); //strlen(&buf));
           break;
         }
         redisplay_request = PicklineRedisplayRequest;
@@ -351,7 +355,7 @@ char **argv;
         {
           buf.ErrorMessage.m_error = LOCAL_MSG;
           strcpy(buf.ErrorMessage.m_text, "Redisplay Is Running");
-          message_put(who, ClientMessageEvent, &buf, strlen(&buf));
+          message_put(who, ClientMessageEvent, &buf, sizeof(buf)); //strlen(&buf));
 #ifdef FIX
           break;
 #endif
@@ -2009,9 +2013,9 @@ port_restoreplace_request()
 /*-------------------------------------------------------------------------*
  *  Timeout On Port Events
  *-------------------------------------------------------------------------*/
-port_timeout()
+void port_timeout(int signum)
 {
-  if (event_count <= 0) return 0;         /* ignore anyway - no events       */
+  if (event_count <= 0) return; // 0;         /* ignore anyway - no events       */
   who = requestor;                        /* send message to requestor       */
 
   sp->sp_in_process_status = 'x';         /* mark nothing running            */
@@ -2019,7 +2023,7 @@ port_timeout()
   message(LOCAL_MSG, "CAPS Is Not Responding");
 
   event_count = 0;                        /* ignore any more events          */
-  return 0;
+  //return 0;
 }
 /*-------------------------------------------------------------------------*
  *  Initialize/Restoreplace Event From A Port
@@ -3055,7 +3059,7 @@ register long n, now;
 /*-------------------------------------------------------------------------*
  *  Graceful Exit
  *-------------------------------------------------------------------------*/
-leave()
+void leave(int val)
 {
   message_close();
   close_all();
