@@ -22,12 +22,15 @@
 static char logon_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <signal.h>
 #include "file_names.h"
 
-extern catcher();
-extern leave();
-extern char *getenv();
+void catcher(int signum);
+void leave(int signum);
+//extern char *getenv();
 
 #define   MAX  32
 #define   LINE 256
@@ -89,7 +92,7 @@ char **argv;
   if (fd == 0)                            /* open failed                     */
   {
     krash("logon", "Open sys/dotinit", 0);
-    leave();
+    leave(0); 
   }
   k = 0;
 
@@ -182,7 +185,7 @@ char **argv;
     execve(tty_server[0], tty_server, list);
 
     krash("logon", "tty_server not found", 0);
-    leave();
+    leave(0);
   }
   
 /*-------------------------------------------------------------------------*
@@ -194,20 +197,20 @@ char **argv;
   execve(op_logon[0], op_logon, list);
 
   krash("logon", "op_logon not found", 0);
-  leave();
+  leave(0);
 }
 /*-------------------------------------------------------------------------*
  *  catch ready signal from tty_server - only to assure loaded.
  *-------------------------------------------------------------------------*/
-catcher()
+void catcher(int signum)
 {
    ready_to_go = 1;
-	return 0;										/* do nothing - only catch	      */
+   // return 0;										/* do nothing - only catch	      */
 }
 /*-------------------------------------------------------------------------*
  *  Grateful Death
  *-------------------------------------------------------------------------*/
-leave()
+void leave(int signum)
 {
   printf("\r\n\nUnable To Logon To CAPS\n\n");
   printf("\r.. Goodbye\n\n\r");
