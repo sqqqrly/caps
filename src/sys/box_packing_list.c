@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------*
  *  Custom Versions: CANTON and all others
-/*-------------------------------------------------------------------------*
+ *-------------------------------------------------------------------------*
  *  Source Code:    %M%
  *-------------------------------------------------------------------------*
  *  Version:        %I%
@@ -41,7 +41,10 @@ static char box_packing_list_c[] = "%Z% %M% %I% (%G% - %U%)";
  *-------------------------------------------------------------------------*/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <signal.h>
+
 #include "file_names.h"
 #include "ss.h"
 #include "of.h"
@@ -167,6 +170,8 @@ char dvalue    = 'x';                     /* debug data value                */
 #include "custom/noxell/box_packing_list.h"
 #endif
 
+void leave(int signum); // Signal handler
+
 /*-------------------------------------------------------------------------*
  *   M A I N
  *-------------------------------------------------------------------------*/
@@ -175,8 +180,6 @@ main(argc, argv)
 long  argc;
 char  **argv;
 {
-  extern leave();
-   
   register long k;
   register char *p;
 
@@ -270,7 +273,7 @@ char  **argv;
   image = (char *)malloc(LENGTH * WIDTH); /* print page work image           */
   memset(image, 0x20, WIDTH * LENGTH);    /* clear image initially           */
    
-  if (debug) {do_debug(); leave();}
+  if (debug) {do_debug(); leave(0);} // leave is a signal handler, passing it zero!
 
   while (1)
   {
@@ -331,7 +334,7 @@ char  **argv;
 /*------------------------------------------------------------------------*
  *  Terminate Processing On Shutdown
  *------------------------------------------------------------------------*/
-leave()
+void leave(int signum)
 {
   printf("\rBox Packing List Stopping On Shutdown\n");
 
