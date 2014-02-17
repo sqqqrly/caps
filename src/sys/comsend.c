@@ -19,7 +19,10 @@
 static char comsend_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <termio.h>
+
 #include "file_names.h"
 
 extern leave();
