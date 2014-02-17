@@ -22,6 +22,10 @@
 static char diag_menu1_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <signal.h>
 #include "iodefs.h"
 #include "sd.h"
@@ -33,7 +37,7 @@ static char diag_menu1_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "eh_nos.h"
 
 extern leave();
-extern catcher();
+void catcher(int signum); // Signal handler
 
 short ONE = 1;
 short LPL = 6;
@@ -213,7 +217,7 @@ load_plc_diag()
 /*-------------------------------------------------------------------------*
  *  Catch SIGTERM
  *-------------------------------------------------------------------------*/
-catcher()
+void catcher(int signum)
 {
   if (pid) kill(pid, SIGTERM);
   leave();
