@@ -29,6 +29,10 @@ static char group_comms_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "caps_copyright.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "message_types.h"
 #include "caps_messages.h"
 #include "getparms.h"
