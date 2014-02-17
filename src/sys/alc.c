@@ -110,7 +110,7 @@ long short_catcher();                     /* short processor                 */
 long STIME = 3;                           /* simulated zone event time       */
 long sim_flag = 0;                        /* allow sim only at good times    */
 long superpicker = 0;                     /* superpicker running flag        */
-extern simulator();
+void simulator(int signum);
 
 long port[PortMax];                       /* open area controller ports      */
 long ports_open = 0;                      /* running or not                  */
@@ -5311,7 +5311,7 @@ close_ports()
 /*-------------------------------------------------------------------------*
  *  Simulator
  *-------------------------------------------------------------------------*/
-simulator()
+void simulator(int signum)
 {
   register struct pl_item   *p;
   register struct bay_item  *b;
@@ -5325,13 +5325,15 @@ simulator()
   fflush(DF);
 #endif
 
-  if (!superpicker) return 0;
+  if (!superpicker) return; // sig handler cannot return a value
+  //if (!superpicker) return 0;
 
   if (!config_ports || sim_flag)
   {
     signal(SIGALRM, simulator);
     alarm(STIME);
-    return 0;
+    // sig handler cannot return a value
+    // return 0;
   }
   for (k = coh->co_zone_cnt; k > 0; k--)
   {
@@ -5396,7 +5398,8 @@ simulator()
   }
   signal(SIGALRM, simulator);
   alarm(STIME);
-  return 0;
+  // sig handler cannot return a value
+  // return 0;
 }
 #endif
 /*-------------------------------------------------------------------------*
