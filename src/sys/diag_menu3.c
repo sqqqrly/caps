@@ -28,8 +28,12 @@
 static char diag_menu3_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
 #include <sys/stat.h>
+
 #include "global_types.h"
 #include "iodefs.h"
 #include "ss.h"
@@ -40,7 +44,7 @@ static char diag_menu3_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "eh_nos.h"
 
 extern leave();
-extern catcher();
+void catcher(int signum); // signal handler
 
 short pid, status;
 
@@ -56,7 +60,7 @@ struct fld_parms fld[] ={
   
 };
 char incode[2];
-char yn[2] = {0};
+char yn0[2] = {0}; // Renamed yn to yn0. yn is a built-in function
 char port[LPORT + 1] = {0};
 char parm[8] = {0};
 
@@ -189,7 +193,7 @@ load_loop_test()
 /*--------------------------------------------------------------------------*
  *  Catcher SIGTERM
  *--------------------------------------------------------------------------*/
-catcher()
+void catcher(int signum)
 {
   if (pid) kill(pid, SIGTERM);
   leave();
@@ -307,18 +311,18 @@ unsigned char get_print_parm()
   
   while (1)
   {
-    memset(yn, 0, 2);
+    memset(yn0, 0, 2);
     
     sd_prompt(&fld[2], 0);
-    t = sd_input(&fld[2], 0, 0, yn, 0);
+    t = sd_input(&fld[2], 0, 0, yn0, 0);
     if (t == EXIT) leave();
     if (t == UP_CURSOR) return t;
 
-    *yn = code_to_caps(*yn);
-    if (*yn == 'y' || *yn == 'n') break;
+    *yn0 = code_to_caps(*yn0);
+    if (*yn0 == 'y' || *yn0 == 'n') break;
     eh_post(ERR_YN, 0);
   }
-  if (*yn == 'y') strcpy(parm, "-print");    
+  if (*yn0 == 'y') strcpy(parm, "-print");    
   return t;
 }
 /*--------------------------------------------------------------------------*
