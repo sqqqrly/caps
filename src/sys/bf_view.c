@@ -22,7 +22,11 @@
 static char bf_view_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <signal.h>
+#include <unistd.h>
+
 #include "iodefs.h"
 #include "ss.h"
 #include "co.h"
@@ -37,7 +41,7 @@ static char bf_view_c[] = "%Z% %M% %I% (%G% - %U%)";
 long pm_fd = 0;
 
 extern leave();
-extern do_view();
+void do_view(int signum);
 
 #define ROW  24
 #define COL  132
@@ -339,7 +343,7 @@ do_input()
 /*-------------------------------------------------------------------------*
  *  Update Current View
  *-------------------------------------------------------------------------*/
-do_view()
+void do_view(int signum)
 {
   register long k, flag, count;
   register unsigned char *d;
@@ -489,7 +493,7 @@ new_screen()
   v_row = 6; 
   v_col = 2;
 
-  do_view();
+  do_view(0); // Signal handler being passed zero!
 }
 /*-------------------------------------------------------------------------*
  *  Find Valid Module
