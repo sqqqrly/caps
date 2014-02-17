@@ -23,20 +23,25 @@
 static char op_logon_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
+
 #include "iodefs.h"
 #include "sd.h"
 #include "caps_version.h"
 #include "message_types.h"
 #include "motd.t"
 
+#include "oracle_defines.h" // Added by dco to define operator_open() and READONLY.
 #include "Bard.h"
 #include "bard/operator.h"
 
-long leave();                             /* graceful exit routine           */
-long punt();                              /* ungraceful exit routine         */
+void leave(int signum);                   /* signal handler. graceful exit routine           */
+void punt(int signum);                    /* signal handler. ungraceful exit routine         */
 
-extern unsigned char *getenv();
+//extern unsigned char *getenv();
 
 operator_item op;                         /* database record                 */
 
@@ -235,8 +240,7 @@ get_password()
 /*-------------------------------------------------------------------------*
  *  Logoff or Error Exit From CAPS
  *-------------------------------------------------------------------------*/
-long leave(flag)
-register long flag;
+void leave(int flag) // signum
 {
   signal(SIGTRAP, punt);                  /* ungraceful exit if any error    */
   
@@ -256,7 +260,7 @@ register long flag;
 /*-------------------------------------------------------------------------*
  *  Exit Program When Screen Driver Not Open
  *-------------------------------------------------------------------------*/
-long punt()
+void punt(int signum)
 {
   printf("\r\n\n Goodbye ...\r\n\n");
   kill(0, SIGTERM);
