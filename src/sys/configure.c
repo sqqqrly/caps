@@ -134,6 +134,10 @@ static char configure_c[] = "%Z% %M% %I% (%G% - %U%)";
  *-------------------------------------------------------------------------*/
  
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "file_names.h"
 #include "global_types.h"
 #include "message_types.h"
@@ -169,7 +173,8 @@ long errors = 0;                          /* error message count
 
 long co_size = 0;                         /* length of co segment            */
 long live    = 1;                         /* using real co segment           */
-long select  = 0;                         /* do not delete output            */
+long select0  = 0;                        /* do not delete output.           */
+                                          /* append 0 to name. cannot use select as a name */
 long send_errors = 0;                     /* error messages                  */
 long port    = 1;                         /* simulated port                  */
 long port_function = 0;                   /* current port type               */
@@ -211,7 +216,7 @@ char **argv;
   for (k = 2; k < argc; k++)
   {
     if (strcmp(argv[k], "-v") == 0)      live = 0;     /* validate only      */
-    else if (strcmp(argv[k], "-s") == 0) {live = 0; select = 1;} /* selection*/
+    else if (strcmp(argv[k], "-s") == 0) {live = 0; select0 = 1;} /* selection*/
     else if (strcmp(argv[k], "-m") == 0) send_errors = 1;
     else 
     {
@@ -2416,7 +2421,7 @@ register long n;
   if (live) co_close_save();              /* save real shared segment        */
   else
   {
-    if (select && co_size > 0) fwrite(co, co_size, 1, cd);
+    if (select0 && co_size > 0) fwrite(co, co_size, 1, cd);
     fclose(cd);
     if (n > 0 || errors > 0) unlink(cd_name);
   }
