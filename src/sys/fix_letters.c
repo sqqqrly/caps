@@ -21,6 +21,8 @@ static char fix_letters_c[] = "%Z% %M% %I% (%G% - %U%)";
  *  checks and builds letter files
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define LF 0x0a  
 
@@ -105,21 +107,21 @@ char **argv;
         printf("%c", c);                  /* display current byte            */
         table[next++] = c;                /* move to table                   */
         if (c == 0x20) continue;          /* space is ok                     */
-        if (c == LF) abort();             /* bad input !!!                   */
-        if (!c) abort();                  /* premature end                   */
+        if (c == LF) abort_me();             /* bad input !!!                   */
+        if (!c) abort_me();                  /* premature end                   */
         if (!what)
         {
           what = c;                       /* first non-space                 */
           continue;
         }
-        if (c != what) abort();           /* different letter                */
+        if (c != what) abort_me();           /* different letter                */
       }
       c = input[in++];
-      if (c != LF) abort();               /* bad input !!!                   */
+      if (c != LF) abort_me();               /* bad input !!!                   */
       printf("\n");
     }
     c = input[in++];
-    if (c != LF) abort();                 /* bad input                       */
+    if (c != LF) abort_me();                 /* bad input                       */
     printf("\n");
   }
   fwrite(table, next, 1, out_fd);
@@ -134,7 +136,7 @@ char **argv;
 /*
  * abort job
  */
-abort()
+abort_me()
 {
   printf("\nInput Error\n\n");
   printf("Error at Input byte = %d\n", in);
