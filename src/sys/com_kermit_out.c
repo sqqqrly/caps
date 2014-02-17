@@ -21,10 +21,13 @@
 static char com_kermit_out_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <termio.h>
 #include <fcntl.h>
 #include <signal.h>
+
 #include "eh_nos.h"
 #include "iodefs.h"
 #include "ss.h"
@@ -35,7 +38,7 @@ static char com_kermit_out_c[] = "%Z% %M% %I% (%G% - %U%)";
 #define TIMEOUT  900                         /* max file xfer is 15 minutes  */
 
 extern leave();
-extern catcher();
+void catcher(int signum);                    /* Signal handler */
 
 long have_server = 0;                        /* got a response               */
 
@@ -268,14 +271,14 @@ say_goodbye()
 /*-------------------------------------------------------------------------*
  *  Alarm Catcher - Kills Last Active Task
  *-------------------------------------------------------------------------*/
-catcher()
+void catcher(int signum)
 {
 #ifdef DEBUG
   fprintf(stderr, "catcher(): got timeout\n");
 #endif
 
   kill (SIGTERM, pid);
-  return 0;
+  //return 0;
 }
 
 /*-------------------------------------------------------------------------*
