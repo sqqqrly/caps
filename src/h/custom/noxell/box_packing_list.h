@@ -47,7 +47,7 @@ before_first_page()
 }
 before_each_page()
 {
-  if(box.b_box_last == 0x20)              /* this is NOT the last box        */
+  if(*(box.b_box_last) == 0x20)              /* this is NOT the last box        */
   {
     pages = last_page;
     last_box = 0;
