@@ -107,6 +107,10 @@ static char order_input_c[] = "%Z% %M% %I% (%G% - %U%)";
  *-------------------------------------------------------------------------*/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <ctype.h>
 #include "global_types.h"
 #include "of.h"
@@ -124,6 +128,7 @@ static char order_input_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 extern char gnc();
 extern leave();
+int sync0();
 
 FILE *od = 0;                             /* log output file                 */
 char oname[16] = {0};                     /* log print file name             */
@@ -200,7 +205,7 @@ char **argv;
 /*-------------------------------------------------------------------------*
  *  Abort Order Input on Serious Error
  *-------------------------------------------------------------------------*/
-abort(text)
+abort0(text)
 char *text;
 {
   if (text) fprintf (od, "\n*** %s ***\n", text);
@@ -290,7 +295,7 @@ get_orders()
     if (c != rf->rf_rp)                   /* first must be preface byte      */
     {
       message("Preface Missing", "Reject");/* no preface byte                */
-      sync();                             /* recover to next record          */
+      sync0();                             /* recover to next record          */
       continue;                           /* loop again                      */
     }
     c = gnc();                            /* get next byte                   */
@@ -549,7 +554,7 @@ get_orders()
     block, of_rec->of_pl, of_rec->of_on);
 #endif
 
-      if (!block) abort("Order Index Is Full");
+      if (!block) abort0("Order Index Is Full");
 
       o = &oc->oi_tab[block - 1];
 
@@ -751,7 +756,7 @@ get_orders()
       if (order_write(of_rec))
       {
         bad_count++;
-        abort("Attempt To Duplicate Order In Database");
+        abort0("Attempt To Duplicate Order In Database");
       }
       commit_work();
       
@@ -951,7 +956,7 @@ get_on()
   {
     sprintf(text, "Order %s Invalid", on_text);
     message (text, "Reject");
-    sync();
+    sync0();
     return -1;
   }
   of_rec->of_on = x;
@@ -1001,7 +1006,7 @@ get_pl()
     }
     sprintf(text, "Pickline %s Invalid", pl_text);
     message (text, "Reject");
-    sync();
+    sync0();
     return -1;
   }
   if (!co) return 0;                      /* no configuration                */
@@ -1011,7 +1016,7 @@ get_pl()
     if (pl[x - 1].pl_pl) return 0;        /* pickline is in configuration    */
   }
   message("Pickline Is Invalid", "Reject");
-  sync();
+  sync0();
   return -1;
 }
 /*-------------------------------------------------------------------------*
@@ -1057,7 +1062,7 @@ get_pri()
   if (of_rec->of_pri != 'h' && of_rec->of_pri != 'm' && of_rec->of_pri != 'l')
   {
     message ("Priority Not H,M,L", "Reject");
-    sync();
+    sync0();
     return -1;
   }
   return 0;
@@ -1150,7 +1155,7 @@ get_pk()
         if (rf->rf_dup_flag == 'n')
         {
           message("Duplicate Pick", "Reject");
-          sync();
+          sync0();
           return -1;
         }
         if (rf->rf_dup_flag == 's')
@@ -1182,7 +1187,7 @@ get_pk()
     if (m > oc->of_max_picks)
     {
       message("Too Many Picks", "Reject");
-      sync();
+      sync0();
       return -1;
     }
   }
@@ -1191,7 +1196,7 @@ get_pk()
   if (m <= 0)                             /* F051094 - reject no picks       */
   {
     message("No Picks", "Reject");
-    sync();
+    sync0();
     return -1;
   }
   return 0;
@@ -1293,7 +1298,7 @@ get_sku()
     return 0;
   }
   message(text, "Reject");                /* reject bad sku                  */
-  sync();
+  sync0();
   return -1;
 }
 /*-------------------------------------------------------------------------*
@@ -1363,7 +1368,7 @@ get_stkloc()
     return -2;
   }
   message(text, "Reject");                /* reject bad stkloc               */
-  sync();
+  sync0();
   return -1;
 }
 /*-------------------------------------------------------------------------*
@@ -1390,7 +1395,7 @@ get_pm()
   {
     sprintf (text, "Module %s Invalid", mod_text);
     message (text, "Reject");
-    sync();
+    sync0();
     return -1;
   }
   pi[m].pi_mod = x;
@@ -1437,7 +1442,7 @@ get_pm()
     return -2;
   }
   message(text, "Reject");                /* reject bad sku                  */
-  sync();
+  sync0();
   return -1;
 }
 /*-------------------------------------------------------------------------*
@@ -1460,7 +1465,7 @@ get_quan()
   {
 	 sprintf (text, "Quantity %s Invalid", q_text);
     message (text, "Reject");
-    sync();
+    sync0();
     return -1;
   }
   pi[m].pi_ordered = x;
@@ -1477,7 +1482,7 @@ get_quan()
     if (rf->rf_zero_quantity == 'n')
     {
       message(text, "Reject 0 Pick");
-      sync();
+      sync0();
       return -1;
     }
     message (text, "Skip 0 Pick");
@@ -1516,7 +1521,7 @@ get_pt()
 /*-------------------------------------------------------------------------*
  *  Skip Rest of an Order
  *-------------------------------------------------------------------------*/
-sync()
+int sync0()
 {
   register long k;
   register char c;
@@ -1607,7 +1612,7 @@ char gnc()
     if (eof) 
     {
       message("Premature EOF", "Rejected"); /* F101894                       */
-      abort("Premature End Of File");
+      abort0("Premature End Of File");
     }
     max  = fread(buffer, 1, BUF, fd);
     if (max < BUF) eof = 1;               /* flag last buffer short or empty */
@@ -1712,7 +1717,7 @@ char **argv;
       if (fd == 0) 
       {
         sprintf(text, "Cannot Open Input File %s", fd_name);
-        abort(text);
+        abort0(text);
       }
     }
   }
@@ -1738,13 +1743,13 @@ char **argv;
   {
     if (sp->sp_config_status != 'y')
     {
-      abort("System Must Be Configured Or In Markplace");
+      abort0("System Must Be Configured Or In Markplace");
     }
   }
   pi = (struct of_pick_item *)malloc
   	(oc->of_max_picks * sizeof(struct of_pick_item));
   	
-  if (!pi) abort("Cannot Allocate Space For Picks");
+  if (!pi) abort0("Cannot Allocate Space For Picks");
   
   if (sp->sp_order_input_purge == 'w' || sp->sp_order_input_purge == 'm')
   {
