@@ -22,7 +22,12 @@
 static char order_input_menu_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
+
 #include "iodefs.h"
 #include "sd.h"
 #include "ss.h"
