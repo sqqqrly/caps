@@ -37,6 +37,10 @@ static char order_stat_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "global_types.h"
 #include "iodefs.h"
 #include "sd.h"
@@ -52,6 +56,7 @@ static char order_stat_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include "Bard.h"
 
+void refresh(int signum);
 extern leave();
 
 #define NUM_PROMPTS     3
@@ -74,7 +79,7 @@ struct fld_parms fld[] = {
 short ref_flag = 0;
 
 char temp1[1920],temp2[10];
-long rm,pickline,cnt,row,done,icol,gototop,block,index,flag,last,more;
+long rm,pickline,cnt,row,done,icol,gototop,block/* ,index */,flag,last,more;
 long first_time = 0;
 long last_entry = 0;
 unsigned char t;
@@ -349,7 +354,7 @@ show_order()
     begin_work();
     if (order_read(of_rec, NOLOCK)) {commit_work(); return;}
     commit_work();
-    refresh();                          /* display the order info          */
+    refresh(0);                          /* display the order info          */
 
     sd_cursor(0,23,30);
     sd_text("(Exit, Forward, or Backward)");
@@ -577,14 +582,14 @@ register long block;
 /*
  * refresh the screen
  */
-refresh()
+void refresh(int signum)
 {
   display_stat(block);
   signal(SIGALRM, refresh);
   
   alarm(op_refresh);
 
-  return 0;
+  //return 0;
 }
 open_all()
 {
