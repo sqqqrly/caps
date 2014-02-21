@@ -36,6 +36,9 @@ static char packing_list_c[] = "%Z% %M% %I% (%G% - %U%)";
  *                             -value=x  indicates 'x' as alpha fill byte
  *-------------------------------------------------------------------------*/
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <signal.h>
 #include "file_names.h"
 #include "ss.h"
@@ -153,7 +156,7 @@ main(argc, argv)
 long  argc;
 char  **argv;
 {
-  extern leave();
+  void leave(int signum); // Signal handler
   register long k;
   register char *p;
 
@@ -240,7 +243,7 @@ char  **argv;
   image = (char *)malloc(LENGTH * WIDTH); /* print page work image           */
   memset(image, 0x20, WIDTH * LENGTH);    /* clear image initially           */
    
-  if (debug) {do_debug(); leave();}
+  if (debug) {do_debug(); leave(0);}
 
   while (1)
   {
@@ -284,7 +287,7 @@ char  **argv;
 /*------------------------------------------------------------------------*
  *  Terminate On Shutdown
  *------------------------------------------------------------------------*/
-leave()
+void leave(int signum)
 {
   printf("\rPacking List Stopping On Shutdown\n");
   ss_close();
