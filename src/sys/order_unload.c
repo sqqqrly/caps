@@ -27,6 +27,9 @@
 static char order_unload_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ss.h"
 #include "st.h"
 #include "co.h"
