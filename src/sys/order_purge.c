@@ -39,6 +39,9 @@ static char order_purge_c[] = "%Z% %M% %I% (%G% - %U%)";
  *  Purges Completed Orders from Order File
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <signal.h>
 #include "global_types.h"
 #include "message_types.h"
