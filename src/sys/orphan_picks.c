@@ -20,6 +20,10 @@
 static char orphan_picks_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "ss.h"
 #include "co.h"
 #include "of.h"
