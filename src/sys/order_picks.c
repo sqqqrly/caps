@@ -40,6 +40,10 @@
 static char order_picks_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "global_types.h"
 #include "iodefs.h"
 #include "getparms.h"
