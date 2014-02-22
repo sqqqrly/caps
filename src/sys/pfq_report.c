@@ -26,6 +26,10 @@ static char pfq_report_c[] = "%Z% %M% %I% (%G% - %U%)";
 /*                                                                      */
 /************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <ctype.h>
 #include "iodefs.h"
 #include "ss.h"
