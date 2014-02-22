@@ -20,6 +20,9 @@ static char trans_in_aps[] = "%Z% %M% %I% (%G% - %U%)";
 #include "caps_copyright.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ss.h"
 #include "eckerd_c.h"
 #include "order_cust_c.h"
@@ -81,7 +84,7 @@ main(int argc, char *argv[])
 	strcpy(szDBName, argv[1]);
 	strcpy(id_name, argv[2]);
 	strcpy(szParam, argv[3]);
-	szParam[1] = NULL;
+	szParam[1] = 0;
 
 	if(szParam[0] != 'A' && szParam[0] != 'M')
 	{
@@ -159,8 +162,8 @@ int load_file()
                    }
                 else
                    {
-                     strncpy(tcode, &buf, 2);
-                     tcode[2] = NULL; 
+                     strncpy(tcode, (char*)&buf, 2);
+                     tcode[2] = 0; 
                      sprintf(text, "Incorrect Transaction Code - %s", tcode);
                      message("Incorrect Transaction Code", 1);
                      break;
@@ -179,8 +182,8 @@ process_header()
   
 	p = &buf.XmitHeader; 
   
-	strncpy(New, &buf, 8);
-	New[8]= NULL;
+	strncpy(New, (char *)&buf, 8);
+	New[8]=0;
 
         if (strcmp(New, "1000001O") != 0)
            {
@@ -202,7 +205,7 @@ process_header()
 
         /* Save Distribution Center Code from Xmit Header */
         strncpy(szDistCent, p->dist_center, DC_CODE_SIZE - 1);
-        szDistCent[DC_CODE_SIZE - 1] = NULL;
+        szDistCent[DC_CODE_SIZE - 1] = 0;
   
 	record_count = 1;
   
