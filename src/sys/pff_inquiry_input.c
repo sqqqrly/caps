@@ -28,6 +28,10 @@ static char pff_inquiry_input_c[] = "%Z% %M% %I% (%G% - %U%)";
 /************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "iodefs.h"
 #include "sd.h"
 #include "ss.h"
@@ -57,7 +61,7 @@ pmfile_item pm;
 #define BUF_SIZE     32
 
 char buf[NUM_PROMPTS][BUF_SIZE];
-char yn[2];
+char yn0[2];
 
 short ONE   = 1;
 short THREE = 3;
@@ -121,14 +125,14 @@ main()
     get_parms();                            /* get all parmeters             */
 
     sd_prompt(&fld[4], 0);
-    memset(yn, 0, 2);
+    memset(yn0, 0, 2);
     
     while(1)
     {
-      t = sd_input(&fld[4], 0, 0, yn, 0);
+      t = sd_input(&fld[4], 0, 0, yn0, 0);
       if (t == EXIT) leave();
       
-      *buf[4] = code_to_caps(*yn);
+      *buf[4] = code_to_caps(*yn0);
 
       if (*buf[4] == 'y')
       {
