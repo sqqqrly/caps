@@ -25,6 +25,10 @@ static char pff_print_c[] = "%Z% %M% %I% (%G% - %U%)";
 /************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "iodefs.h"
 
 #define WIDTH           80         /* characters per line (including NEWLINE)*/
@@ -52,7 +56,7 @@ char **argv;                           /* argv[1] contains filename to format*/
 #endif
   
   for(i=0;i<5;i++)
-  buf[i]=NULL;                            /* clear comparison buffer         */
+  buf[i]=0;                            /* clear comparison buffer         */
   tmp_name(print_name);
 
   fpr = fopen(argv[1], "r");
