@@ -27,6 +27,10 @@
 static char transac_review_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "iodefs.h"
 #include "sd.h"
 #include "transac_review.t"
@@ -75,7 +79,7 @@ char heading6[] =
 "  Date Time     Group  Reference       Order PL C SKU/SL   Module Quan Pick\
   Zn";
   
-short ret,rm,i,k,n,j,gototop,err,index,si,pickline,found, shorts, picks;
+short ret,rm,i,k,n,j,gototop,err,index0,si,pickline,found, shorts, picks;
 long order, block, savefp;
 char ord[6],temp_file[16],temp1[5];
 char sku_mod1[16], quan1[5], quan2[5];
@@ -133,13 +137,13 @@ main()
     if((SUPER_OP) && (!(IS_ONE_PICKLINE))) rm = 0;
     else rm = 1;
 
-    index = si = rm;
+    index0 = si = rm;
     
     for(i = rm; i < 2; i++) sd_prompt(&fld[i], 0);
 
     while(1)
     {
-      t = sd_input(&fld[index], 0, 0, buf[index], 0);
+      t = sd_input(&fld[index0], 0, 0, buf[index0], 0);
 
       sd_cursor(0,8,1);                   /*clear the bottom part            */
       sd_clear_rest();
@@ -148,12 +152,12 @@ main()
 
       if (t == DOWN_CURSOR || t == TAB)
       {
-        if(index == 0) index = 1;
+        if(index0 == 0) index0 = 1;
         continue;
       }
       else if (t == UP_CURSOR)
       {
-        if (index == 1 && si == 0) index = 0;
+        if (index0 == 1 && si == 0) index0 = 0;
         continue;
       }
       if (t == F_KEY_5)
@@ -190,7 +194,7 @@ main()
           if(!*buf[0])
           {
             eh_post(ERR_PL,buf[0]);
-            index = 0;
+            index0 = 0;
             continue;
           }
           if(sp->sp_config_status == 'y') check_pkln();
@@ -198,7 +202,7 @@ main()
 
           if(err)                         /*invalid pickline was entered     */
           {
-            index = 0;
+            index0 = 0;
             continue;
           }
         }
@@ -268,7 +272,7 @@ main()
         {
           sd_cursor(0, 8, 28);
           sd_text("No Transactions");
-          index = si;
+          index0 = si;
           for(i = rm;i < 2;i++)
           for(n = 0;n < BUF_SIZE;n++) buf[i][n] = 0;
           for (i = rm; i < 2; i++)
@@ -279,7 +283,7 @@ main()
       else
       {
         eh_post(ERR_ORDER,buf[1]);
-        index = si;
+        index0 = si;
         continue;
       }
     }                                      /* end while - has found data     */
