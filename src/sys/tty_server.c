@@ -29,6 +29,10 @@
 static char tty_driver_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
 #include <signal.h>
 #include <termio.h>
 #include <errno.h>
@@ -51,7 +55,7 @@ struct termio raw_tty, sane_tty;          /* tty termio structures           */
 
 extern screen_server();                   /* screen events processor         */
 extern leave();                           /* exit routine                    */
-extern catcher();
+void catcher(int signum); // Signal handler
 extern char *getenv();
 
 char tty_name[16];                        /* name of this terminal           */
@@ -119,7 +123,7 @@ unsigned char last_line[81];              /* last message line display       */
 #if defined(APU) || defined(AVON)
 long on_apu = 0;
 Putchar(x) register char x; {if (!on_apu) putchar(x);}
-Fputs(x, y) register char *x; register long y;{if (!on_apu) fputs(x,y);}
+Fputs(x, y) register char *x; /*register long y*/ FILE *y;{if (!on_apu) fputs(x,y);}
 #else
 #define Putchar(x)    putchar(x)
 #define Fputs(x, y)   fputs((x), (y))
@@ -297,7 +301,7 @@ tty_close()
 /*-------------------------------------------------------------------------*
  *  Catch Signals
  *-------------------------------------------------------------------------*/
-catcher()
+void catcher(int signum)
 {
   leave(1);
 }
