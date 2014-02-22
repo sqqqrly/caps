@@ -20,6 +20,10 @@
 static char printer_control_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "iodefs.h"
 #include "getparms.h"
 #include "sd.h"
