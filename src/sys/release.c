@@ -21,6 +21,9 @@ static char release[] = "%Z% %M% %I% (%G% - %U%)";
 #include "caps_copyright.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ss.h"
 #include "order_cust_c.h"
 #define FileName  "otext/download"
