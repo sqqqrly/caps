@@ -20,6 +20,11 @@
 static char transac_format_srn_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+
 #include "iodefs.h"
 #include "global_types.h"
 #include "getparms.h"
