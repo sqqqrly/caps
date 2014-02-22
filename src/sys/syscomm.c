@@ -41,6 +41,10 @@ static char syscomm_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "iodefs.h"
 #include "message_types.h"
 #include "caps_messages.h"
