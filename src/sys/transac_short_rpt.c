@@ -19,6 +19,10 @@
 static char transac_short_rpt_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
 #include "Bard.h"
 #include "ss.h"
 #include "xt.h"
