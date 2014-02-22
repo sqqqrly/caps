@@ -30,6 +30,9 @@ static char sku_diskette_write_c[] = "%Z% %M% %I% (%G% - %U%)";
  ***************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ss.h"
 #include "file_names.h"
 #include "eh_nos.h"
@@ -44,7 +47,7 @@ short ONE = 1;
 struct fld_parms fld = {22,58,25,1,&ONE,"Diskette Ready? (y/n)",'a'};
 
 
-char pbuf[BUF_SIZE], yn[2];               /* prompt buffer                   */
+char pbuf[BUF_SIZE], yn0[2];               /* prompt buffer                   */
 char buf[128];                            /* Input buffer                    */
 long ret,i;                               /* working variable                */
 short rm;
@@ -70,16 +73,16 @@ main()
   while(1)
   {
                 /* Write SKU Data to Diskette   */
-    memset(yn, 0, 2);
+    memset(yn0, 0, 2);
     sd_cursor (0,20,25);
     sd_text ("Insert Diskette For SKU Output");
-    t = sd_input(&fld,sd_prompt(&fld,0),&rm,yn,0);
+    t = sd_input(&fld,sd_prompt(&fld,0),&rm,yn0,0);
     if (t == EXIT)
     {
       close_all();
       exit(0);
     }
-    *pbuf = code_to_caps(*yn);
+    *pbuf = code_to_caps(*yn0);
     if (*pbuf != 'y' && *pbuf != 'n')
     {
       eh_post(ERR_YN,0);
@@ -109,14 +112,14 @@ main()
     sd_text ("Remove SKU Diskette");
     sd_cursor (0,21,25);
     sd_text ("Insert Diskette For Pick Module Output");
-    memset(yn, 0, 2);
-    t = sd_input(&fld,sd_prompt(&fld,0),&rm,yn,0);
+    memset(yn0, 0, 2);
+    t = sd_input(&fld,sd_prompt(&fld,0),&rm,yn0,0);
     if (t == EXIT)
     {
       close_all();
       exit(0);
     }
-    *pbuf = code_to_caps(*yn);
+    *pbuf = code_to_caps(*yn0);
     if (*pbuf != 'y' && *pbuf != 'n')
     {
       eh_post(ERR_YN,0);
