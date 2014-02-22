@@ -23,8 +23,11 @@ static char picker_acountability_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "caps_copyright.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <time.h>
+
 #include "iodefs.h"
 #include "sd.h"
 #include "ss.h"
@@ -354,6 +357,7 @@ process_logout()
  *  load a programs
  */
 loadprog(p)
+char *p;
 {
   char text[64];
   
