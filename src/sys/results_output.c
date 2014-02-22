@@ -20,10 +20,13 @@ static char transac_output_c[] = "%Z% %M% %I% (%G% - %U%)";
 #define DEBUG 
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <time.h>
+
 #include "file_names.h"
 #include "iodefs.h"
 #include "ss.h"
