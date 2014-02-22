@@ -20,6 +20,10 @@
 static char select_comms_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "message_types.h"
 #include "caps_messages.h"
 #include "getparms.h"
