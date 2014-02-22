@@ -24,6 +24,10 @@ static char restock_rpt_create_c[] = "%Z% %M% %I% (%G% - %U%)";
 /*                                                                      */
 /************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "file_names.h"
 #include "iodefs.h"
 #include "ss.h"
