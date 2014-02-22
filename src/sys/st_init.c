@@ -26,6 +26,10 @@
 static char st_init_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "file_names.h"
 #include "ss.h"
 #include "co.h"
