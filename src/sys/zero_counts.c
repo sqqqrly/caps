@@ -33,6 +33,8 @@ static char zero_counts_c[] = "%Z% %M% %I% (%G% - %U%)";
 /****************************************************************************/
 
 #include <stdio.h>
+#include <unistd.h>
+
 #include "getparms.h"
 #include "iodefs.h"
 #include "sd.h"
