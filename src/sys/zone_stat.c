@@ -37,6 +37,10 @@ static char zone_stat_c[] = "%Z% %M% %I% (%G% - %U%)";
 /****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <signal.h>
 #include "global_types.h"
 #include "iodefs.h"
@@ -52,7 +56,7 @@ static char zone_stat_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "zone_stat2.t"
 #include "Bard.h"
 
-extern refresh();
+void refresh(int signum); // Signal handler
 extern catcher();
 extern leave();
 
@@ -116,7 +120,7 @@ main()
 
     pos = 0;                              /* reset display                   */
     activity_flag = 1;                    /* force counts                    */
-    refresh();        
+    refresh(0);        
     more_prompt();
     alarm(0);                             /* stop refresh                    */
   
@@ -312,6 +316,9 @@ store_data()
  *  Get Group, Order Number, and Customer Order Number
  *-------------------------------------------------------------------------*/
 get_order(grp, number, block)
+char *grp;
+char *number;
+long block;
 {
   char work[16];
 
@@ -573,7 +580,7 @@ display()
 /*-------------------------------------------------------------------------*
  * refresh the screen 
  *-------------------------------------------------------------------------*/
-refresh()
+void refresh(int signum) // Signal handler
 {
   display();
   show(LINES, 2);
