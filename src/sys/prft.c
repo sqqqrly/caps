@@ -38,6 +38,10 @@ static char prft_c[] = "%Z% %M% %I% (%G% - %U%)";
  *-------------------------------------------------------------------------*/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
 #include "ss.h"
 #include "co.h"
 #include "iodefs.h"
