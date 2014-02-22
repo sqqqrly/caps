@@ -21,6 +21,9 @@
 static char save_hw_maps_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "file_names.h"
 #include "co.h"
 #include "ss.h"
