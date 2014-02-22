@@ -23,6 +23,10 @@ static char program_name_c[] = "%Z% %M% %I% (%G% - %U%)";
 /*                                                                      */
 /************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "iodefs.h"
 #include "sd.h"
 #include "ss.h"
@@ -73,7 +77,7 @@ char **argv;
     show(fp,16,dflag);
     sd_clear_rest();                      /* clear remainder of screen       */
     for(i=0;i<2;i++)
-    buf[i]=NULL;
+    buf[i]=0;
     sd_prompt(&fld,0);
     while(1)                              /* loop to process print prompt    */
     {
