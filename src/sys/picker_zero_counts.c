@@ -22,7 +22,11 @@ static char picker_zero_counts_c[] = "%Z% %M% %I% (%G% - %U%)";
 #include "caps_copyright.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <time.h>
+
 #include "iodefs.h"
 #include "sd.h"
 #include "co.h"
