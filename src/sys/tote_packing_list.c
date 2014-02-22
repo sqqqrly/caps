@@ -57,6 +57,9 @@ static char tote_packing_list_c[] = "%Z% %M% %I% (%G% - %U%)";
  *                             -value=x  indicates 'x' as alpha fill byte
  *-------------------------------------------------------------------------*/
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <signal.h>
 #include "file_names.h"
 #include "ss.h"
