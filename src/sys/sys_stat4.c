@@ -39,6 +39,11 @@ static char sys_stat4_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <time.h>
+
 #include "Bard.h"
 #include "global_types.h"
 #include "iodefs.h"
@@ -83,7 +88,7 @@ main()
 {
   register char *p;
   register long n, flag;
-  extern refresh();
+  void refresh(int signum); // Signal handler
   extern leave();
 
   putenv("_=sys_stat4");
@@ -132,7 +137,7 @@ main()
       else pickline = op_pl;
     }
     alarm(0);
-    refresh();
+    refresh(0);
 
 #ifdef DEBUG
     fprintf(stderr, "pickline=%d\n", pickline);
@@ -174,7 +179,7 @@ main()
           eh_post(ERR_YN, 0);
           continue;
         }
-        refresh();
+        refresh(0);
       }
       where = data = 0;                 /* stop display                   */
       alarm(0);                         /* stop refresh                   */
@@ -213,7 +218,7 @@ main()
       sd_clear_screen();
       show_top(1920); 
     }
-    refresh();
+    refresh(0);
   }
 }
 /*-------------------------------------------------------------------------*
@@ -425,7 +430,7 @@ display()
 /*-------------------------------------------------------------------------*
  * function to refresh the screen
  *-------------------------------------------------------------------------*/
-refresh()
+void refresh(int signum) // Signal handler
 {
   display();
   signal(SIGALRM, refresh);
