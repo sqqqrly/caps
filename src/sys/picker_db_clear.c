@@ -17,6 +17,10 @@
 static char picker_db_clear_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "oracle_defines.h"
 #include "Bard.h"
 #include "bard/picker.h"
 #include "bard/picker_order.h"
