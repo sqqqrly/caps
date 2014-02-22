@@ -17,6 +17,9 @@
 static char trans_server_c[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "xt.h"
 #include "caps_messages.h"
 #include "message_types.h"
