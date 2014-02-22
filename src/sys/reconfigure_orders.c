@@ -28,6 +28,10 @@
 static char reconfigure_orders[] = "%Z% %M% %I% (%G% - %U%)";
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "global_types.h"
 #include "Bard.h"
 #include "ss.h"
