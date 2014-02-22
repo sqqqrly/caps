@@ -37,6 +37,10 @@ static char sys_stat_c[] = "%Z% %M% %I% (%G% - %U%)";
 /****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <signal.h>
 #include "Bard.h"
 #include "global_types.h"
