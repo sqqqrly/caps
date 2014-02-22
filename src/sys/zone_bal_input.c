@@ -30,6 +30,10 @@ static char zone_bal_input_c[] = "%Z% %M% %I% (%G% - %U%)";
  ****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "iodefs.h"
 #include "file_names.h"
 #include "sd.h"
@@ -66,12 +70,12 @@ struct fld_parms fld[] ={
   {13,48,3,1,&L32,"Enter Pick Rate File:",'a'}
 };
 
-long i,j,n,pickline,index,si,rm,zones;
+long i,j,n,pickline,index0,si,rm,zones;
 long orders, zones;
 unsigned char t;
 char rates[50], text[50];
 char buf[NUM_PROMPTS][BUF_SIZE];
-char yn[2];
+char yn0[2];
 FILE *fd;
 char temp1[10], temp2[10], temp3[10], temp4[10], junk[50];
 
@@ -105,21 +109,21 @@ main()
   {  
     sd_prompt(&fld[j], 0);
   }
-  index = si;
+  index0 = si;
 
   while(1)
   {
-    t = sd_input(&fld[index], 0, 0, buf[index], 0);
+    t = sd_input(&fld[index0], 0, 0, buf[index0], 0);
 
     if (t == EXIT) leave();
     else if(t == UP_CURSOR)
     {
-      if (index > si) index--;
+      if (index0 > si) index0--;
       continue;
     }
     else if (t == DOWN_CURSOR || t == TAB)
     {
-      if (index < 4) index++;
+      if (index0 < 4) index0++;
       continue;
     }
     if (!si)
@@ -134,7 +138,7 @@ main()
            if (pickline < 1)
               {
                 eh_post(ERR_PL,buf[0]);
-                index = 0;
+                index0 = 0;
                 continue;
               }
          }
@@ -145,7 +149,7 @@ main()
     if (*buf[1] != 'l' && *buf[1] != 'u')
     {
       eh_post(ERR_CODE, buf[1]);
-      index = 1;
+      index0 = 1;
       continue;
     }
 /*
@@ -160,7 +164,7 @@ main()
     if(zones < 0 || zones > coh->co_zones)
     {
       eh_post(ERR_RANGE, 0);
-      index = 3;
+      index0 = 3;
       continue;
     }
     sprintf(buf[3], "%d", zones);
@@ -168,7 +172,7 @@ main()
     if(!*buf[4])                          /* output config file              */
     {
       eh_post(ERR_FILE_INVALID, 0);
-      index = 4;
+      index0 = 4;
       continue;
     }
     sprintf(junk, "config/%s", buf[4]);
@@ -183,14 +187,14 @@ main()
 /*
  * determine which rates to use
  */
-    memset(yn, 0, 2);
+    memset(yn0, 0, 2);
     while(1)
     {
       sd_prompt(&fld[5], 0);
-      t = sd_input(&fld[5], 0, 0,yn, 0);
+      t = sd_input(&fld[5], 0, 0,yn0, 0);
         
       if(t == EXIT) leave();
-      *buf[5] = code_to_caps(*yn);
+      *buf[5] = code_to_caps(*yn0);
       
       if (*buf[5] == 'y') 
       {
@@ -207,14 +211,14 @@ main()
 /* 
  * prompt for cumulative rates
  */
-    memset(yn, 0, 2);
+    memset(yn0, 0, 2);
     while(1)
     {
       sd_prompt(&fld[6], 0);
-      t = sd_input(&fld[6], 0, 0, yn, 0);
+      t = sd_input(&fld[6], 0, 0, yn0, 0);
         
       if(t == EXIT) leave();
-      *buf[6] = code_to_caps(*yn);
+      *buf[6] = code_to_caps(*yn0);
       if (*buf[6] == 'y') 
       {
         strcpy(rates,"cumulative");
