@@ -25,6 +25,9 @@ static char sku_diskette_read_c[] = "%Z% %M% %I% (%G% - %U%)";
  *
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ss.h"
 #include "file_names.h"
 
