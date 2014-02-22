@@ -32,6 +32,10 @@ static char productivity_c[] = "%Z% %M% %I% (%G% - %U%)";
 /****************************************************************************/
                            
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "getparms.h"
 #include "iodefs.h"
 #include "sd.h"
